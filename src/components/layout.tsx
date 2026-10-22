@@ -1,35 +1,32 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
+import { Suspense, useEffect, useRef, useState } from "react";
+import {
+  Link,
+  NavLink,
+  Outlet,
+  useLocation,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
 import {
   Menu,
   ArrowUpRight,
   Globe2,
   WifiOff,
-  LayoutDashboard,
-  BookOpen,
-  Users,
-  Sparkles,
-  CalendarDays,
-  Bookmark,
   LogOut,
-  ShieldCheck,
-  Settings2,
-  Heart,
-  Bell,
-  GraduationCap,
+  ChevronRight,
 } from "lucide-react";
 import { Brand, ButtonLink, Modal } from "./ui";
 import { demoProfiles } from "../data/demo";
 import { useStore, languageLabels } from "../lib/store";
 import type { Role, Language } from "../domain/types";
 import { canAccess } from "../domain/learning";
-export const roleHome: Record<Role, string> = {
-  learner: "/learn",
-  tutor: "/studio",
-  guardian: "/guardian",
-  champion: "/champion",
-  admin: "/admin",
-};
+export { roleHome } from "./workspace-navigation";
+import {
+  roleHome,
+  workspaceNavigation,
+  destinationIsActive,
+  currentDestination,
+} from "./workspace-navigation";
 export function Layout() {
   const [menu, setMenu] = useState(false);
   const [info, setInfo] = useState(false);
@@ -37,6 +34,7 @@ export function Layout() {
     useStore();
   const location = useLocation();
   useEffect(() => {
+    document.title = "Village Vidya — A little help. A world of possibility.";
     if (!location.hash) {
       window.scrollTo({ top: 0, behavior: "instant" });
       document.getElementById("main-content")?.focus({ preventScroll: true });
@@ -241,112 +239,246 @@ export function Protected({ roles }: { roles: Role[] }) {
   const { role } = useStore();
   return canAccess(role, roles) ? <Outlet /> : <Navigate to="/login" replace />;
 }
+// Public discovery keeps its URLs; signed-in demo profiles retain their workspace.
+export function DiscoveryLayout() {
+  const { role } = useStore();
+  return role ? <Workspace /> : <Layout />;
+}
 export function Workspace() {
-  const { role, online, logout, data } = useStore();
-  const [notifications, setNotifications] = useState(false);
+  const { role, data, online, logout, storageIssue, message } = useStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [menu, setMenu] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const profile = demoProfiles[role ?? "learner"];
-  const t = languageLabels[data.language];
-  const learnerNav = [
-    { to: "/learn", label: t.home, icon: LayoutDashboard },
-    { to: "/explore", label: t.learn, icon: BookOpen },
-    { to: "/tutors", label: t.tutors, icon: Users },
-    { to: "/assistant", label: "Ask a doubt", icon: Sparkles },
-    { to: "/sessions", label: "My sessions", icon: CalendarDays },
-    { to: "/community", label: "Knowledge wall", icon: Bookmark },
-  ];
-  const otherNav =
-    role === "tutor"
-      ? [
-          { to: "/studio", label: "Tutor overview", icon: LayoutDashboard },
-          { to: "/sessions", label: "My sessions", icon: CalendarDays },
-          { to: "/studio/feedback", label: "Co-Teacher", icon: Sparkles },
-          { to: "/community", label: "Knowledge wall", icon: BookOpen },
-        ]
-      : [
-          {
-            to: roleHome[role ?? "learner"],
-            label:
-              role === "guardian"
-                ? "Learning together"
-                : role === "champion"
-                  ? "Trust dashboard"
-                  : "Platform overview",
-            icon: role === "guardian" ? Heart : ShieldCheck,
-          },
-          { to: "/community", label: "Knowledge wall", icon: BookOpen },
-        ];
-  return (
-    <div className="workspace">
-      <aside className="sidebar">
-        <div className="workspace-label">
-          <GraduationCap size={17} />
-          {profile.label} space
-        </div>
-        <nav aria-label="Workspace navigation">
-          {(role === "learner" ? learnerNav : otherNav).map(
-            ({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} end>
-                <Icon size={19} />
-                {label}
-              </NavLink>
-            ),
-          )}
-        </nav>
-        <div className="sidebar-bottom">
-          <div className="sidebar-note">
-            <span className={online ? "status-dot" : "status-dot offline"} />
-            {online ? "Online · local demo" : "Offline · on this device"}
-            <p>Your next small step matters.</p>
+  const translated = languageLabels[data.language];
+  const existingTranslations: Record<string, string> = {
+    "/learn": translated.home,
+    "/explore": translated.learn,
+    "/tutors": translated.tutors,
+  };
+  const destinations = workspaceNavigation[role ?? "learner"].map((item) =>
+    role === "learner" &&
+    data.language !== "English" &&
+    existingTranslations[item.to]
+      ? { ...item, label: existingTranslations[item.to] }
+      : item,
+  );
+  const active = currentDestination(
+    role ?? "learner",
+    location.pathname,
+    location.hash,
+  );
+  const title = location.pathname.startsWith("/lesson/")
+    ? "Lesson"
+    : location.pathname.startsWith("/room/")
+      ? "Practice room"
+      : (destinations.find((item) => item.to === active?.to)?.label ??
+        {
+          "/explore": "Learning Library",
+          "/tutors": "Find Tutors",
+          "/community": "Community",
+          "/assistant": "Ask AI",
+        }[location.pathname] ??
+        "Page not found");
+  useEffect(() => {
+    document.title = `${title} · Village Vidya`;
+  }, [location.pathname, location.hash, title]);
+  function closeMenu() {
+    setMenu(false);
+    menuButton.current?.focus();
+  }
+  function leave() {
+    closeMenu();
+    logout();
+    navigate("/login");
+  }
+  function navigation(mobile = false) {
+    return (
+      <nav
+        aria-label={
+          mobile ? "Mobile workspace navigation" : "Workspace navigation"
+        }
+        className="workspace-navigation"
+      >
+        {[...new Set(destinations.map((item) => item.group))].map((group) => (
+          <div className="workspace-nav-group" key={group}>
+            <span className="workspace-group-label">{group}</span>
+            {destinations
+              .filter((item) => item.group === group)
+              .map(({ to, label, icon: Icon }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  onClick={mobile ? closeMenu : undefined}
+                  className={
+                    destinationIsActive(to, location.pathname, location.hash)
+                      ? "active"
+                      : undefined
+                  }
+                  aria-current={
+                    destinationIsActive(to, location.pathname, location.hash)
+                      ? "page"
+                      : undefined
+                  }
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  {label}
+                </Link>
+              ))}
           </div>
-          <NavLink to="/settings">
-            <Settings2 size={18} /> Preferences
-          </NavLink>
-          <button onClick={logout}>
-            <LogOut size={18} /> Leave demo
-          </button>
-          <div className="profile-chip">
+        ))}
+      </nav>
+    );
+  }
+  return (
+    <div className="app-shell">
+      <a
+        className="skip-link"
+        href="#main-content"
+        onClick={(event) => {
+          event.preventDefault();
+          document.getElementById("main-content")?.focus();
+        }}
+      >
+        Skip to content
+      </a>
+      <aside className="app-sidebar" aria-label={`${profile.label} workspace`}>
+        <Link
+          to={roleHome[role ?? "learner"]}
+          aria-label="Workspace home"
+          className="workspace-brand"
+        >
+          <Brand />
+        </Link>
+        <div className="workspace-role">{profile.label} workspace</div>
+        {navigation()}
+        <div className="workspace-account">
+          <div className="workspace-profile">
             <span>{profile.name[0]}</span>
             <div>
               <strong>{profile.name}</strong>
-              <small>Fictional {profile.label.toLowerCase()}</small>
+              <small>Fictional profile</small>
             </div>
           </div>
-        </div>
-      </aside>
-      <div className="workspace-main">
-        <div className="workspace-topline">
-          <span>
-            <span className="status-dot" /> Fictional demo · your browser, your
-            pace
-          </span>
-          <button
-            className="notification-button"
-            onClick={() => setNotifications(true)}
-            aria-label="View notifications"
-          >
-            <Bell size={18} />
-            <span className="notification-dot" />
+          <Link to="/">
+            Public website <ArrowUpRight size={15} />
+          </Link>
+          <button onClick={leave}>
+            <LogOut size={17} />
+            Leave demo
           </button>
         </div>
-        <Outlet />
+      </aside>
+      <div className="app-body">
+        <header className="app-header">
+          <button
+            ref={menuButton}
+            className="icon-button workspace-menu-toggle"
+            onClick={() => setMenu(true)}
+            aria-label="Open workspace navigation"
+            aria-expanded={menu}
+            aria-haspopup="dialog"
+          >
+            <Menu size={22} />
+          </button>
+          <div className="app-header-context">
+            <span>{profile.label} workspace</span>
+            <strong>{title}</strong>
+          </div>
+          <span className="workspace-demo-status">
+            <span className={online ? "status-dot" : "status-dot offline"} />
+            Fictional demo
+            <span className="workspace-connection">
+              {" "}
+              · {online ? "on this device" : "offline"}
+            </span>
+          </span>
+        </header>
+        {!online && (
+          <div className="offline-banner" role="status">
+            <WifiOff size={16} />
+            You’re offline. Previously loaded lessons and local practice are
+            available.
+          </div>
+        )}
+        {storageIssue && (
+          <div className="offline-banner" role="alert">
+            Browser storage is unavailable. Changes last for this visit only.
+          </div>
+        )}
+        <main id="main-content" className="app-content" tabIndex={-1}>
+          <nav className="workspace-breadcrumbs" aria-label="Breadcrumb">
+            <Link to={roleHome[role ?? "learner"]}>Workspace</Link>
+            <ChevronRight size={13} aria-hidden="true" />
+            {location.pathname.startsWith("/lesson/") && (
+              <>
+                <Link to="/explore">
+                  {role === "admin" ? "Curriculum" : "My Learning"}
+                </Link>
+                <ChevronRight size={13} aria-hidden="true" />
+              </>
+            )}
+            {location.hash && active && (
+              <>
+                <Link to={roleHome[role ?? "learner"]}>Overview</Link>
+                <ChevronRight size={13} aria-hidden="true" />
+              </>
+            )}
+            <span aria-current="page">{title}</span>
+          </nav>
+          <Suspense
+            fallback={
+              <div className="page-loading" role="status">
+                <span />
+                Loading your workspace…
+              </div>
+            }
+          >
+            <WorkspaceContent />
+          </Suspense>
+        </main>
       </div>
       <Modal
-        open={notifications}
-        onClose={() => setNotifications(false)}
-        title="A little nudge"
+        open={menu}
+        onClose={closeMenu}
+        title={`${profile.label} workspace`}
       >
-        <div className="notification-item">
-          <Sparkles size={21} />
-          <div>
-            <strong>Your next aha is waiting</strong>
-            <p>Continue a lesson or ask a peer to explain it another way.</p>
-          </div>
+        {navigation(true)}
+        <div className="workspace-mobile-account">
+          <Link to="/" onClick={closeMenu}>
+            Public website <ArrowUpRight size={16} />
+          </Link>
+          <button onClick={leave}>
+            <LogOut size={17} />
+            Leave demo
+          </button>
         </div>
         <p className="small muted">
-          In-app demo notification only. Push notifications and SMS are not
-          connected.
+          {profile.name} · fictional profile · local demo
         </p>
       </Modal>
+      {message && (
+        <div className="toast" role="status">
+          {message}
+        </div>
+      )}
     </div>
   );
+}
+
+// Commit focus only after lazy page content is ready, including direct hash links.
+function WorkspaceContent() {
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash) {
+      const section = document.getElementById(location.hash.slice(1));
+      section?.scrollIntoView({ behavior: "instant", block: "start" });
+      section?.focus({ preventScroll: true });
+    } else {
+      window.scrollTo({ top: 0, behavior: "instant" });
+      document.getElementById("main-content")?.focus({ preventScroll: true });
+    }
+  }, [location.pathname, location.hash]);
+  return <Outlet />;
 }

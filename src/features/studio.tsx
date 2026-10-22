@@ -147,7 +147,7 @@ export function Studio() {
       </div>
       <div className="studio-layout">
         <div>
-          <section className="studio-section">
+          <section id="requests" tabIndex={-1} className="studio-section">
             <div className="section-heading">
               <div>
                 <Eyebrow>SOMEONE COULD USE YOUR KIND OF HELP</Eyebrow>
@@ -284,7 +284,11 @@ export function Studio() {
           </section>
         </div>
         <aside>
-          <section className="aside-panel growth-goal">
+          <section
+            id="growth"
+            tabIndex={-1}
+            className="aside-panel growth-goal"
+          >
             <Target size={24} strokeWidth={1.4} />
             <Eyebrow>ONE THING TO TRY THIS WEEK</Eyebrow>
             <h3>Give the learner the last word.</h3>
@@ -305,7 +309,11 @@ export function Studio() {
               </span>
             </label>
           </section>
-          <section className="aside-panel studio-availability">
+          <section
+            id="schedule"
+            tabIndex={-1}
+            className="aside-panel studio-availability"
+          >
             <CalendarDays size={21} />
             <h3>Make a little time.</h3>
             <p>

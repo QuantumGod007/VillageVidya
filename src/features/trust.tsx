@@ -52,7 +52,7 @@ export function Guardian() {
         <p>A simple window into Aarav’s fictional learning journey.</p>
       </div>
       <div className="guardian-layout">
-        <section className="guardian-summary">
+        <section id="progress" tabIndex={-1} className="guardian-summary">
           <div className="guardian-summary-title">
             <Heart size={24} />
             <div>
@@ -93,7 +93,7 @@ export function Guardian() {
             </p>
           </div>
         </section>
-        <section className="guardian-digest">
+        <section id="updates" tabIndex={-1} className="guardian-digest">
           <Eyebrow>NO APP REQUIRED, IN THE PRODUCTION DESIGN</Eyebrow>
           <h2>
             A small message.
@@ -129,7 +129,7 @@ export function Guardian() {
           </span>
         </section>
       </div>
-      <section className="consent-card">
+      <section id="consent" tabIndex={-1} className="consent-card">
         <ShieldCheck size={26} />
         <div>
           <h2>Trust begins with your permission.</h2>
@@ -177,7 +177,7 @@ export function Champion() {
         </div>
       </div>
       <div className="champion-grid">
-        <section className="trust-panel">
+        <section id="verification" tabIndex={-1} className="trust-panel">
           <div className="section-heading">
             <h2>
               People to <em>meet.</em>
@@ -240,7 +240,7 @@ export function Champion() {
             This release collects no identity documents.
           </p>
         </section>
-        <section className="trust-panel">
+        <section id="moderation" tabIndex={-1} className="trust-panel">
           <Eyebrow>IDEAS WORTH PASSING AROUND</Eyebrow>
           <h2>
             A note for <em>the wall.</em>
@@ -269,7 +269,11 @@ export function Champion() {
             <Check size={16} />
           </Button>
         </section>
-        <section className="trust-panel safety-panel">
+        <section
+          id="reports"
+          tabIndex={-1}
+          className="trust-panel safety-panel"
+        >
           <ShieldCheck size={25} />
           <h2>
             A calm place to <em>raise a concern.</em>
@@ -378,7 +382,7 @@ export function Admin() {
           <strong>0</strong>
         </div>
       </div>
-      <section className="trust-panel">
+      <section id="operations" tabIndex={-1} className="trust-panel">
         <div className="section-heading">
           <h2>
             A little clarity on <em>the infrastructure.</em>

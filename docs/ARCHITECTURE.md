@@ -54,3 +54,7 @@ The worker is enabled only in production, on HTTPS or localhost. A first success
 ## Future backend boundary
 
 No migration is included or applied. A future audited server must own writes to scores, consent, verification, match assignment and moderated messages. Its authorization policies must limit private reads to owners/participants and authorized governance roles. Frontend demo route gates cannot substitute for those policies.
+
+## Workspace route boundary (Phase 2)
+
+`AppRoutes` composes public, shared-discovery and protected workspace routes. `Workspace` owns internal chrome; `workspace-navigation.ts` shares role destinations between desktop and mobile. `WorkspaceContent` applies route focus after lazy content is ready. Demo state stays above both layout trees. Existing URL and role permissions are preserved; see [PHASE-2.md](PHASE-2.md).
