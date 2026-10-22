@@ -72,3 +72,10 @@ export interface CompletedSession {
   rating: number;
   evaluation: Evaluation;
 }
+
+export interface LearningActivity {
+  id: string;
+  lessonId: string;
+  at: number;
+  score: number;
+}

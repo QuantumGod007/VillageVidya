@@ -7,9 +7,9 @@ The prerequisite milestone is therefore a runnable demo foundation. It contains 
 | Milestone | Review boundary | Status |
 | --- | --- | --- |
 | Runnable demo foundation | Existing local app, truthful demo states, domain/interaction tests, build/CI, SRS mapping and original design | Merged as PR #1 (`c9727a3`) |
-| Workspace navigation architecture | Persistent internal shell, focused role navigation, route hierarchy and return paths | Phase 2 implemented for review; see PHASE-2.md |
-| Learner overview | One next action, next session, continue learning and relevant recent activity | Planned; dependent on navigation |
-| Tutor teaching workflow | Requests and next session first; dedicated schedule/availability and feedback/growth pages | Planned; review as a coherent unit |
+| Workspace navigation architecture | Persistent internal shell, focused role navigation, route hierarchy and return paths | Merged as PR #2 (`2ffd8e2`); see PHASE-2.md |
+| Learner overview | One next action, next session, continue learning and relevant recent activity | Phase 3 implemented for review; see PHASE-3.md |
+| Tutor teaching workflow | Requests and next session first; dedicated schedule/availability and feedback/growth pages | Overview hierarchy implemented in Phase 3; dedicated workflow improvements remain deferred |
 | Sessions and learning progress | Separate lifecycle views, details and purposeful mastery/history destinations | Planned; reassess boundaries after previous merges |
 | Governance roles and accessibility | Dedicated consent/updates, verification/moderation and operations views; genuine responsive and keyboard fixes | Planned; split only when independently valuable |
 
@@ -20,3 +20,5 @@ For each subsequent milestone: fetch and fast-forward local main after the prior
 The more detailed [dashboard audit and target architecture](DASHBOARD-UX.md) is a proposed backlog. It has not been implemented by the foundation PR. The public landing page is retained.
 
 Phase 2 follows the explicit branch name `design/workspace-navigation`. Later milestones remain unstarted until this PR is approved and merged and the user supplies the next phase prompt.
+
+Phase 3 follows the explicit branch `design/role-dashboard-experience`, limited to learner/tutor dashboard content and the state needed to represent actual visit activity and safe next actions. Later milestones require review, merge and a new user prompt.

@@ -58,3 +58,7 @@ No migration is included or applied. A future audited server must own writes to 
 ## Workspace route boundary (Phase 2)
 
 `AppRoutes` composes public, shared-discovery and protected workspace routes. `Workspace` owns internal chrome; `workspace-navigation.ts` shares role destinations between desktop and mobile. `WorkspaceContent` applies route focus after lazy content is ready. Demo state stays above both layout trees. Existing URL and role permissions are preserved; see [PHASE-2.md](PHASE-2.md).
+
+## Dashboard state boundary (Phase 3)
+
+`role-dashboards.tsx` composes learner/tutor content with scoped CSS. `domain/dashboard.ts` selects unfinished lessons, open requests and known future IST demo slot labels. `StoreProvider.learningActivity` holds up to 30 checkpoint metadata events in memory; saved progress still uses its existing validated schema. Logout, reset and demo expiry clear visit records. The overview reads the same derived tutor catalog as discovery. Stopped requests are cancelled locally so dashboard recommendations cannot reopen safety-stopped rooms. See [PHASE-3.md](PHASE-3.md).

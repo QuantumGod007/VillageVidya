@@ -1,6 +1,6 @@
 # Dashboard UX audit and proposed restructuring
 
-**Status: navigation shell implemented in Phase 2; dashboard content restructuring remains planned.** Follow the sequential review gates in DEVELOPMENT.md.
+**Status: navigation shell implemented in Phase 2; learner/tutor overview content implemented in Phase 3 for review.** Follow the sequential review gates in DEVELOPMENT.md.
 
 ## Audit
 
@@ -34,3 +34,7 @@ No database change or new external integration is required. Schedule preferences
 ## Phase 2 implementation boundary
 
 See [PHASE-2.md](PHASE-2.md) for the actual route map and interim section destinations. Shared discovery and lesson routes now retain the workspace, mobile uses the complete role navigation, and marketing chrome stays outside internal workflows. Dashboard content has not been rearranged in depth.
+
+## Phase 3 implementation boundary
+
+[PHASE-3.md](PHASE-3.md) documents the redesigned learner/tutor hierarchy, actual visit-state handling and deliberate empty states. Other roles, dedicated scheduling and grade-based curriculum infrastructure remain deferred.
