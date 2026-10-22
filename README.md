@@ -24,7 +24,7 @@ No environment variables, API keys, or paid services are required. Real service 
 
 ## Try a connected journey
 
-1. Choose **Get started**, the fictional **Learner** role, grade, language, and subject. Acknowledge that the profile is fictional.
+1. Choose **Get started** and the fictional **Learner** role. Select **CBSE**, **Grade 6**, **English**, and **Mathematics** for this fractions journey. Acknowledge that the profile is fictional.
 2. Continue **Fractions, made familiar**. Answer its checkpoint; correct answers update actual local mastery. Bookmark the lesson and find it in Saved lessons.
 3. Open **Find tutors**. Change language/grade/availability filters and inspect **Why this match makes sense**.
 4. Request a demo session. Explicitly simulate acceptance, decline, or timeout. Declines cascade to another eligible available peer; unanswered invitations expire after 45 seconds, with an overall 90-second limit.
