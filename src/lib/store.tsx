@@ -8,6 +8,7 @@ import {
 import { z } from "zod";
 import type {
   CompletedSession,
+  LearningActivity,
   Language,
   MatchRequest,
   Role,
@@ -95,6 +96,7 @@ interface AppStore {
   ) => MatchRequest;
   updateRequest: (id: string, status: MatchRequest["status"]) => void;
   completed: CompletedSession[];
+  learningActivity: LearningActivity[];
   finishSession: (session: CompletedSession) => void;
   approve: (id: string) => void;
   toast: (message: string) => void;
@@ -107,6 +109,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [online, setOnline] = useState(navigator.onLine);
   const [requests, setRequests] = useState<MatchRequest[]>([]);
   const [completed, setCompleted] = useState<CompletedSession[]>([]);
+  const [learningActivity, setLearningActivity] = useState<LearningActivity[]>(
+    [],
+  );
   const [message, setMessage] = useState("");
   const [storageIssue, setStorageIssue] = useState(false);
   useEffect(() => {
@@ -131,6 +136,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const t = setTimeout(
       () => {
         setAuth(null);
+        setRequests([]);
+        setCompleted([]);
+        setLearningActivity([]);
         sessionStorage.removeItem("vv-demo-role");
         setMessage("Your demo session ended. Choose a profile to continue.");
       },
@@ -165,6 +173,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setAuth(null);
     setRequests([]);
     setCompleted([]);
+    setLearningActivity([]);
     try {
       sessionStorage.removeItem("vv-demo-role");
     } catch {
@@ -182,6 +191,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setData(defaults);
       setRequests([]);
       setCompleted([]);
+      setLearningActivity([]);
       setMessage("The fictional demo has been reset.");
     },
     setPreferences: (v) => setData((p) => ({ ...p, ...v })),
@@ -192,11 +202,20 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           ? p.saved.filter((x) => x !== id)
           : [...p.saved, id],
       })),
-    completeLesson: (id, score) =>
+    completeLesson: (id, score) => {
+      const event = {
+        id: crypto.randomUUID(),
+        lessonId: id,
+        at: Date.now(),
+        score,
+      };
+      setLearningActivity((previous) => [event, ...previous].slice(0, 30));
       setData((p) => ({
         ...p,
         progress: { ...p.progress, [id]: Math.max(p.progress[id] || 0, score) },
-      })),
+      }));
+    },
+    learningActivity,
     requests,
     request: (tutorId, subject, topic, scheduled) => {
       const next: MatchRequest = {

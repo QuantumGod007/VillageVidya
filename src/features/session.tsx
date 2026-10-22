@@ -33,8 +33,16 @@ import {
 } from "../components/ui";
 export function SessionRoom() {
   const { id } = useParams();
-  const { requests, finishSession, role, online, toast } = useStore();
-  const match = requests.find((r) => r.id === id && r.status === "accepted");
+  const {
+    requests,
+    completed,
+    updateRequest,
+    finishSession,
+    role,
+    online,
+    toast,
+  } = useStore();
+  const match = requests.find((r) => r.id === id);
   const tutor = tutors.find((t) => t.id === match?.tutorId) ?? tutors[0];
   const lesson =
     lessons.find((l) => l.subject === match?.subject) ?? lessons[0];
@@ -83,7 +91,15 @@ export function SessionRoom() {
     },
     [],
   );
-  if (!match)
+  useEffect(() => {
+    if (status === "terminated" && match?.status === "accepted")
+      updateRequest(match.id, "cancelled");
+  }, [status, match?.id, match?.status, updateRequest]);
+  if (
+    !match ||
+    (match.status !== "accepted" && status !== "terminated") ||
+    (completed.some((session) => session.id === id) && status !== "completed")
+  )
     return (
       <div className="container page">
         <EmptyState
