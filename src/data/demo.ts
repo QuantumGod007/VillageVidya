@@ -1,3 +1,4 @@
+import type { Assessment } from "../domain/curriculum";
 import type { Lesson, Tutor, Evaluation, Role } from "../domain/types";
 export const demoProfiles: Record<
   Role,
@@ -119,7 +120,11 @@ export const tutors: Tutor[] = [
     slots: ["Today, 5:00 PM", "Tomorrow, 6:30 PM"],
   },
 ];
-export const lessons: Lesson[] = [
+const originalLessons: (Omit<
+  Lesson,
+  "boardId" | "chapterId" | "assessmentId" | "language"
+> &
+  Pick<Assessment, "question" | "options" | "answer" | "explanation">)[] = [
   {
     id: "fractions",
     subject: "Mathematics",
@@ -295,7 +300,83 @@ export const lessons: Lesson[] = [
       "The Gram Sabha includes all registered adult voters in the area, giving residents a voice in local decisions.",
     keywords: ["village", "panchayat", "sabha", "civics", "government"],
   },
+  {
+    id: "prime-factors",
+    subject: "Mathematics",
+    grade: 10,
+    title: "The building blocks of a number",
+    subtitle: "Prime factorisation and why it is unique.",
+    minutes: 8,
+    concept:
+      "Every composite number can be written as a product of prime numbers. The prime factors are unique, apart from their order. This is the Fundamental Theorem of Arithmetic.",
+    steps: [
+      "Start with 60. It is even, so 60 = 2 × 30.",
+      "Split 30 into 2 × 15, then split 15 into 3 × 5.",
+      "Now every factor is prime: 60 = 2 × 2 × 3 × 5 = 2² × 3 × 5.",
+      "Starting with 60 = 6 × 10 leads to the same prime factors. Only their order changes.",
+    ],
+    example:
+      "A factor tree can branch in different ways. Like taking different routes to a village, each route ends at the same set of prime building blocks.",
+    question: "Which is the prime factorisation of 84?",
+    options: ["2 × 6 × 7", "2² × 3 × 7", "2 × 3² × 7"],
+    answer: 1,
+    explanation:
+      "84 = 2 × 42 = 2 × 2 × 21 = 2² × 3 × 7. Every factor in the final product is prime.",
+    keywords: ["prime", "factor", "arithmetic", "real number"],
+  },
+  {
+    id: "hcf-lcm",
+    subject: "Mathematics",
+    grade: 10,
+    title: "Finding common ground",
+    subtitle: "Use prime factors to find HCF and LCM.",
+    minutes: 9,
+    concept:
+      "The HCF uses the smallest powers of the prime factors shared by two positive integers. The LCM uses the largest powers of every prime factor present.",
+    steps: [
+      "Write 12 = 2² × 3 and 18 = 2 × 3².",
+      "For the HCF, take the smaller shared powers: 2 × 3 = 6.",
+      "For the LCM, take the larger powers: 2² × 3² = 36.",
+      "Check: for two positive integers, HCF × LCM = the product of the integers. Here 6 × 36 = 12 × 18 = 216.",
+    ],
+    example:
+      "To divide 12 pencils and 18 erasers into the greatest number of identical sets without leftovers, make 6 sets. Each has 2 pencils and 3 erasers.",
+    question: "What are the HCF and LCM of 8 and 12?",
+    options: ["2 and 48", "4 and 24", "4 and 96"],
+    answer: 1,
+    explanation:
+      "8 = 2³ and 12 = 2² × 3. HCF = 2² = 4; LCM = 2³ × 3 = 24. Their product is 96, the same as 8 × 12.",
+    keywords: ["hcf", "lcm", "common", "multiple"],
+  },
 ];
+// Stable legacy lesson IDs preserve bookmarks and checkpoint records. Original
+// notes are supplementary; only the Grade 10 chapter metadata has a source.
+export const assessments: Assessment[] = [];
+export const lessons: Lesson[] = originalLessons.map((original) => {
+  const { question, options, answer, explanation, ...lesson } = original;
+  const assessmentId = `${lesson.id}-checkpoint`;
+  assessments.push({
+    id: assessmentId,
+    lessonId: lesson.id,
+    question,
+    options,
+    answer,
+    explanation,
+  });
+  return {
+    ...lesson,
+    boardId: "cbse",
+    language: "English",
+    assessmentId,
+    chapterId:
+      lesson.grade === 10
+        ? "cbse-10-math-real-numbers"
+        : lesson.id === "equations"
+          ? "cbse-8-math-linear-equations"
+          : `supplementary-${lesson.id}`,
+  };
+});
+
 export const sampleEvaluation: Evaluation = {
   correctness: 96,
   completeness: 88,

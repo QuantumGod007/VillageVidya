@@ -1,26 +1,20 @@
-import type { CompletedSession, Lesson, MatchRequest, Subject } from "./types";
+import type { CompletedSession, Lesson, MatchRequest } from "./types";
 
-// The chosen subject drives this small demo-library suggestion. This is not a
-// grade-specific curriculum or a claim of an AI recommendation.
+import { lessonsFor, type AcademicContext } from "./curriculum";
+// Never recommend outside the learner’s selected academic context.
 export function nextLesson(
   library: Lesson[],
   progress: Record<string, number>,
-  subject: Subject,
+  context: AcademicContext,
 ) {
-  const inProgress = (lesson: Lesson) =>
-    (progress[lesson.id] || 0) > 0 && (progress[lesson.id] || 0) < 100;
-  const unfinished = (lesson: Lesson) => (progress[lesson.id] || 0) < 100;
+  const eligible = lessonsFor(library, context);
   return (
-    library.find(
-      (lesson) => lesson.subject === subject && inProgress(lesson),
-    ) ??
-    library.find(
-      (lesson) => lesson.subject === subject && unfinished(lesson),
-    ) ??
-    library.find(inProgress) ??
-    library.find(unfinished)
+    eligible.find(
+      (l) => (progress[l.id] || 0) > 0 && (progress[l.id] || 0) < 100,
+    ) ?? eligible.find((l) => (progress[l.id] || 0) < 100)
   );
 }
+
 export function openSessions(
   requests: MatchRequest[],
   completed: CompletedSession[],

@@ -26,12 +26,17 @@ import {
 } from "../components/ui";
 import { Roti } from "../components/learning-art";
 import type { Subject } from "../domain/types";
-const subjects: Subject[] = [
-  "Mathematics",
-  "Science",
-  "English",
-  "Social Science",
-];
+import { curriculum } from "../data/curriculum";
+import {
+  lessonsFor,
+  chaptersFor,
+  chapterFor,
+  tutorContextUrl,
+} from "../domain/curriculum";
+import {
+  AcademicContextPicker,
+  CoverageNote,
+} from "../components/academic-context";
 const colorFor: Record<Subject, string> = {
   Mathematics: "peach",
   Science: "sage",
@@ -43,16 +48,28 @@ export function Explore() {
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [savedOnly, setSavedOnly] = useState(false);
-  const { data, saveLesson, online } = useStore();
-  const subject = params.get("subject") || "All subjects";
-  const filtered = lessons.filter(
+  const { data, saveLesson, online, setPreferences } = useStore();
+  const subject = [
+    "Mathematics",
+    "Science",
+    "English",
+    "Social Science",
+  ].includes(params.get("subject") || "")
+    ? (params.get("subject") as Subject)
+    : data.subject;
+  const context = { ...data, subject };
+  const library = lessonsFor(lessons, context);
+  const chapters = chaptersFor(curriculum, context);
+  const chapterId = params.get("chapter");
+  const filtered = library.filter(
     (l) =>
-      (subject === "All subjects" || l.subject === subject) &&
+      (!chapterId || l.chapterId === chapterId) &&
       (!savedOnly || data.saved.includes(l.id)) &&
-      `${l.title} ${l.subject} ${l.keywords.join(" ")}`
+      `${l.title} ${l.subject} ${chapterFor(curriculum, l)?.title} ${l.keywords.join(" ")}`
         .toLowerCase()
         .includes(query.toLowerCase()),
   );
+  const savedCount = library.filter((l) => data.saved.includes(l.id)).length;
   return (
     <div className="container page library-page">
       <div className="page-heading library-heading">
@@ -73,6 +90,8 @@ export function Explore() {
           <i>c.</i>
         </div>
       </div>
+      <AcademicContextPicker subject={subject} onChange={() => setParams({})} />
+      <CoverageNote />
       <div className="library-toolbar">
         <label className="search-input">
           <Search size={18} />
@@ -89,23 +108,30 @@ export function Explore() {
           aria-pressed={savedOnly}
         >
           <Bookmark size={16} />
-          Saved lessons{data.saved.length > 0 && ` (${data.saved.length})`}
+          Saved lessons{savedCount > 0 && ` (${savedCount})`}
         </Button>
       </div>
-      <div className="filter-tabs" role="group" aria-label="Filter by subject">
-        {["All subjects", ...subjects].map((s) => (
-          <button
-            key={s}
-            className={subject === s ? "active" : ""}
-            aria-pressed={subject === s}
-            onClick={() =>
-              setParams(s === "All subjects" ? {} : { subject: s })
-            }
-          >
-            {s}
+
+      {chapters.length > 0 && (
+        <div
+          className="academic-chapters"
+          role="group"
+          aria-label="Filter by chapter"
+        >
+          <button aria-pressed={!chapterId} onClick={() => setParams({})}>
+            All chapters
           </button>
-        ))}
-      </div>
+          {chapters.map((c) => (
+            <button
+              key={c.id}
+              aria-pressed={chapterId === c.id}
+              onClick={() => setParams({ subject, chapter: c.id })}
+            >
+              {c.title}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="results-line">
         <span>
           {filtered.length} {filtered.length === 1 ? "lesson" : "lessons"} to
@@ -113,7 +139,7 @@ export function Explore() {
         </span>
         <span>
           <BookOpen size={14} />
-          Original learning notes · not an official curriculum index
+          Grade {data.grade} · {subject} · {data.language}
         </span>
       </div>
       {filtered.length ? (
@@ -123,6 +149,7 @@ export function Explore() {
               <Link
                 className={`lesson-cover ${colorFor[l.subject]}`}
                 to={`/lesson/${l.id}`}
+                onClick={() => setPreferences({ subject: l.subject })}
                 aria-label={`Study ${l.title}`}
               >
                 <span className="lesson-cover-meta">
@@ -154,6 +181,14 @@ export function Explore() {
                     <span>
                       Round
                       <br />& <em>round.</em>
+                    </span>
+                  ) : l.grade === 10 ? (
+                    <span>
+                      {l.id === "prime-factors" ? "Prime." : "Common."}
+                      <br />
+                      <em>
+                        {l.id === "prime-factors" ? "By nature." : "Ground."}
+                      </em>
                     </span>
                   ) : (
                     <span>
@@ -188,12 +223,18 @@ export function Explore() {
                   {l.minutes} min
                 </div>
                 <h2>
-                  <Link to={`/lesson/${l.id}`}>
+                  <Link
+                    to={`/lesson/${l.id}`}
+                    onClick={() => setPreferences({ subject: l.subject })}
+                  >
                     {l.title}
                     <ArrowUpRight size={17} />
                   </Link>
                 </h2>
                 <p>{l.subtitle}</p>
+                <p className="small muted">
+                  {chapterFor(curriculum, l)?.title} · Original practice
+                </p>
                 <div className="lesson-progress">
                   <Progress
                     value={data.progress[l.id] || 0}
@@ -211,24 +252,37 @@ export function Explore() {
       ) : (
         <EmptyState
           title={
-            savedOnly ? "A little space for later." : "No lessons found, yet."
+            !library.length
+              ? "Your curriculum has room to grow."
+              : savedOnly
+                ? "A little space for later."
+                : "No lessons match these filters."
           }
           description={
-            savedOnly
-              ? "Save a lesson using its bookmark. You can find it here next time."
-              : "Try a different word or explore another subject."
+            !library.length
+              ? `No ${subject} lessons for Grade ${data.grade}, ${data.language}, on this board yet. Your saved work in other contexts is kept. Try another context above or find a tutor for help.`
+              : savedOnly
+                ? "Save a lesson using its bookmark. You can find it here next time."
+                : "Try a different word or explore another subject."
           }
         >
-          <Button
-            variant="outline"
-            onClick={() => {
-              setQuery("");
-              setSavedOnly(false);
-              setParams({});
-            }}
-          >
-            Explore all lessons
-          </Button>
+          {library.length > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                setQuery("");
+                setSavedOnly(false);
+                setParams({});
+              }}
+            >
+              Clear lesson filters
+            </Button>
+          )}
+          {!library.length && (
+            <ButtonLink to={tutorContextUrl(context)} variant="outline">
+              Find a tutor for this grade
+            </ButtonLink>
+          )}
         </EmptyState>
       )}
       <div className="library-note">
@@ -249,13 +303,13 @@ export function Explore() {
 export function LessonPage() {
   const { id } = useParams();
   const lesson = lessons.find((l) => l.id === id);
-  const { data, saveLesson, completeLesson } = useStore();
+  const { data, saveLesson, completeLesson, setPreferences } = useStore();
   const [answer, setAnswer] = useState<number | null>(null);
   const [checked, setChecked] = useState(false);
   useEffect(() => {
     setAnswer(null);
     setChecked(false);
-  }, [id]);
+  }, [id, data.boardId, data.grade, data.language, data.subject]);
   if (!lesson)
     return (
       <div className="container page">
@@ -267,13 +321,67 @@ export function LessonPage() {
         </EmptyState>
       </div>
     );
-  const correct = answer === lesson.answer;
+  const eligible = lessonsFor(lessons, data).some((l) => l.id === lesson.id);
+  if (!eligible)
+    return (
+      <div className="container page">
+        <EmptyState
+          title="This lesson belongs to another academic context."
+          description={`This is ${curriculum.boards.find((b) => b.id === lesson.boardId)?.name} Grade ${lesson.grade}, ${lesson.subject}, in ${lesson.language}. Your current selection is Grade ${data.grade}, ${data.subject}, ${data.language}. Choose the matching context to study it; your existing progress is kept.`}
+        >
+          <Button
+            onClick={() =>
+              setPreferences({
+                boardId: lesson.boardId,
+                grade: lesson.grade,
+                subject: lesson.subject,
+                language: lesson.language,
+              })
+            }
+          >
+            Study in this lesson’s context
+          </Button>
+          <ButtonLink to="/explore" variant="outline">
+            Back to My Learning
+          </ButtonLink>
+        </EmptyState>
+      </div>
+    );
+  const chapter = chapterFor(curriculum, lesson)!;
+  const assessment = curriculum.assessments.find(
+    (a) => a.id === lesson.assessmentId,
+  )!;
+  const sequence = lessonsFor(lessons, {
+    ...data,
+    subject: lesson.subject,
+  }).filter((l) => l.chapterId === lesson.chapterId);
+  const position = sequence.findIndex((l) => l.id === id);
+  const correct = answer === assessment.answer;
+
   return (
     <div className="container page lesson-page">
       <Link className="back-link" to="/explore">
         <ArrowLeft size={16} />
         Back to the library
       </Link>
+      <nav className="academic-breadcrumb" aria-label="Academic breadcrumb">
+        <Link to="/explore">
+          {curriculum.boards.find((b) => b.id === lesson.boardId)?.name} · Grade{" "}
+          {lesson.grade}
+        </Link>
+        <span>›</span>
+        <Link to={`/explore?subject=${encodeURIComponent(lesson.subject)}`}>
+          {lesson.subject}
+        </Link>
+        <span>›</span>
+        <Link
+          to={`/explore?subject=${encodeURIComponent(lesson.subject)}&chapter=${lesson.chapterId}`}
+        >
+          {chapter.title}
+        </Link>
+        <span>›</span>
+        <span>Lesson & practice</span>
+      </nav>
       <div className="reading-layout">
         <article className="reading-content">
           <Eyebrow>
@@ -284,8 +392,22 @@ export function LessonPage() {
           <p className="reading-subtitle">{lesson.subtitle}</p>
           <div className="reading-source">
             <BookOpen size={15} />
-            Original demo learning note · no claim of NCERT verification
+            Village Vidya original practice · not an official textbook lesson
           </div>
+          <p className="academic-source">
+            {chapter.source ? (
+              <>
+                Chapter metadata reference:{" "}
+                <a href={chapter.source.url} target="_blank" rel="noreferrer">
+                  {chapter.source.title}
+                </a>{" "}
+                · {chapter.source.edition}. This original practice covers a
+                small part of the chapter.
+              </>
+            ) : (
+              "Supplementary practice. No official chapter mapping has been verified."
+            )}
+          </p>
           <div className={`lesson-intro ${colorFor[lesson.subject]}`}>
             <Lightbulb size={23} />
             <p>{lesson.concept}</p>
@@ -317,10 +439,10 @@ export function LessonPage() {
           <section className="checkpoint" aria-labelledby="checkpoint-title">
             <Eyebrow icon>A LITTLE CHECKPOINT</Eyebrow>
             <h2 id="checkpoint-title">Your turn to try.</h2>
-            <p>{lesson.question}</p>
+            <p>{assessment.question}</p>
             <fieldset disabled={checked}>
               <legend className="sr-only">Choose an answer</legend>
-              {lesson.options.map((option, i) => (
+              {assessment.options.map((option, i) => (
                 <label
                   className={`answer-option ${answer === i ? "selected" : ""}`}
                   key={option}
@@ -333,7 +455,7 @@ export function LessonPage() {
                   />
                   <span>{String.fromCharCode(65 + i)}</span>
                   {option}
-                  {checked && i === lesson.answer && <Check size={18} />}
+                  {checked && i === assessment.answer && <Check size={18} />}
                 </label>
               ))}
             </fieldset>
@@ -347,7 +469,7 @@ export function LessonPage() {
                     ? "That’s it. A little more understood."
                     : "A good place to try another way."}
                 </strong>
-                <p>{lesson.explanation}</p>
+                <p>{assessment.explanation}</p>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -373,13 +495,30 @@ export function LessonPage() {
           <div className="reading-next">
             <p>Still a little unsure? That’s what learning is for.</p>
             <ButtonLink
-              to={`/tutors?subject=${encodeURIComponent(lesson.subject)}`}
+              to={tutorContextUrl(
+                { ...data, subject: lesson.subject },
+                lesson.id,
+              )}
               variant="outline"
             >
               Talk it through with a peer
               <ArrowUpRight size={16} />
             </ButtonLink>
           </div>
+          <nav className="lesson-sequence" aria-label="Lesson sequence">
+            {sequence[position - 1] && (
+              <Link to={`/lesson/${sequence[position - 1].id}`}>
+                ← {sequence[position - 1].title}
+              </Link>
+            )}
+            {sequence[position + 1] ? (
+              <Link to={`/lesson/${sequence[position + 1].id}`}>
+                Next: {sequence[position + 1].title} →
+              </Link>
+            ) : (
+              <Link to="/learn/progress">View progress →</Link>
+            )}
+          </nav>
         </article>
         <aside className="reading-aside">
           <div className="aside-panel">
@@ -391,7 +530,7 @@ export function LessonPage() {
               label="Lesson mastery"
             />
             <span className="small muted">
-              {data.progress[lesson.id] || 0}% topic mastery
+              {data.progress[lesson.id] || 0}% checkpoint progress
             </span>
             <Button
               variant="outline"

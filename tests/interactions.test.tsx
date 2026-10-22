@@ -17,6 +17,26 @@ function Wrapper({
   children: React.ReactNode;
   route?: string;
 }) {
+  if (route === "/lesson/fractions") {
+    const prefs = JSON.parse(
+      localStorage.getItem("village-vidya-fictional-demo-v1") || "{}",
+    );
+    localStorage.setItem(
+      "village-vidya-fictional-demo-v1",
+      JSON.stringify({
+        grade: 6,
+        language: "English",
+        subject: "Mathematics",
+        progress: { fractions: 50 },
+        saved: [],
+        available: true,
+        lowData: true,
+        goal: false,
+        approved: [],
+        ...prefs,
+      }),
+    );
+  }
   return (
     <MemoryRouter initialEntries={[route]}>
       <StoreProvider>{children}</StoreProvider>
@@ -338,6 +358,9 @@ describe("connected demo state regressions", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Find a peer for tomorrow" }),
-    ).toHaveAttribute("href", "/tutors");
+    ).toHaveAttribute(
+      "href",
+      expect.stringContaining("/tutors?board=cbse&grade=8"),
+    );
   });
 });

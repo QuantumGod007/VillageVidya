@@ -22,3 +22,5 @@ The more detailed [dashboard audit and target architecture](DASHBOARD-UX.md) is 
 Phase 2 follows the explicit branch name `design/workspace-navigation`. Later milestones remain unstarted until this PR is approved and merged and the user supplies the next phase prompt.
 
 Phase 3 follows the explicit branch `design/role-dashboard-experience`, limited to learner/tutor dashboard content and the state needed to represent actual visit activity and safe next actions. Later milestones require review, merge and a new user prompt.
+
+Phase 3 was merged as PR #3 (`5f93b11`). Phase 4 uses `feat/grade-aware-curriculum` from that merged main and covers the academic domain and its learning journeys only. Review the coverage and limitations in [PHASE-4.md](PHASE-4.md). Phase 5 requires a reviewed merge and a new user instruction.

@@ -39,30 +39,30 @@ describe("dashboard priorities", () => {
       nextLesson(
         lessons,
         { fractions: 50, photosynthesis: 0, water: 25 },
-        "Science",
+        { boardId: "cbse", grade: 6, subject: "Science", language: "English" },
       )?.id,
     ).toBe("water");
     expect(
       nextLesson(
         lessons,
         { fractions: 50, photosynthesis: 0, water: 0 },
-        "Science",
+        { boardId: "cbse", grade: 6, subject: "Science", language: "English" },
       )?.id,
-    ).toBe("photosynthesis");
+    ).toBe("water");
   });
   it("handles a completed subject and a fully completed library honestly", () => {
     expect(
       nextLesson(
         lessons,
         { fractions: 50, photosynthesis: 100, water: 100 },
-        "Science",
+        { boardId: "cbse", grade: 6, subject: "Science", language: "English" },
       )?.id,
-    ).toBe("fractions");
+    ).toBeUndefined();
     expect(
       nextLesson(
         lessons,
         Object.fromEntries(lessons.map((lesson) => [lesson.id, 100])),
-        "Science",
+        { boardId: "cbse", grade: 6, subject: "Science", language: "English" },
       ),
     ).toBeUndefined();
   });
@@ -116,7 +116,11 @@ function Prepared({
     if (initialized.current) return;
     initialized.current = true;
     if (mode === "science")
-      store.setPreferences({ subject: "Science", grade: 7, language: "मराठी" });
+      store.setPreferences({
+        subject: "Science",
+        grade: 7,
+        language: "English",
+      });
     if (mode === "complete")
       lessons.forEach((lesson) => store.completeLesson(lesson.id, 100));
     if (mode === "ready" || mode === "completed" || mode === "scheduled") {
@@ -154,18 +158,20 @@ function open(
   );
 }
 describe("role dashboard journeys", () => {
-  it("personalizes context and explains a chosen-subject suggestion without claiming grade-matched curriculum", async () => {
+  it("personalizes context and recommends only the selected grade and subject", async () => {
     open("learner", "/learn", "science");
     expect(
       await screen.findByRole("heading", { name: "A leaf’s little kitchen" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("Grade 7", { exact: true })).toBeInTheDocument();
+    expect(
+      screen.getByText("CBSE · Grade 7", { exact: true }),
+    ).toBeInTheDocument();
     expect(screen.getByText("Science", { exact: true })).toBeInTheDocument();
     expect(
       screen.getByRole("link", { name: "Continue learning" }),
     ).toHaveAttribute("href", "/lesson/photosynthesis");
     expect(
-      screen.getByText(/small mixed-grade demo library/),
+      screen.getByText(/progress for the selected academic context/),
     ).toBeInTheDocument();
   });
   it("does not invent recent activity or an upcoming session from seeded progress", async () => {
@@ -208,7 +214,7 @@ describe("role dashboard journeys", () => {
     open("learner", "/learn", "complete");
     expect(
       await screen.findByRole("heading", {
-        name: "You’ve completed the demo checkpoints.",
+        name: "You’ve completed these practice checkpoints.",
       }),
     ).toBeInTheDocument();
     expect(
@@ -221,9 +227,7 @@ describe("role dashboard journeys", () => {
     await user.click(
       await screen.findByRole("link", { name: "Continue learning" }),
     );
-    await user.click(
-      await screen.findByRole("radio", { name: /2\/6 of a roti/ }),
-    );
+    await user.click(await screen.findByRole("radio", { name: /12/ }));
     await user.click(
       screen.getByRole("button", { name: "Check my understanding" }),
     );
@@ -237,9 +241,9 @@ describe("role dashboard journeys", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("progressbar", {
-        name: "Fractions, made familiar progress",
+        name: "Keeping the balance progress",
       }),
-    ).toHaveAttribute("aria-valuenow", "50");
+    ).toHaveAttribute("aria-valuenow", "25");
     expect(
       JSON.parse(localStorage.getItem("village-vidya-fictional-demo-v1")!),
     ).not.toHaveProperty("learningActivity");
@@ -353,7 +357,7 @@ describe("role dashboard journeys", () => {
     ).toBeInTheDocument();
     await waitFor(() =>
       expect(
-        screen.getByText("You’ve completed the demo checkpoints."),
+        screen.getByText("You’ve completed these practice checkpoints."),
       ).toBeInTheDocument(),
     );
   });

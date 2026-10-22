@@ -23,12 +23,18 @@ import { useStore } from "../lib/store";
 import {
   Avatar,
   Button,
-  ButtonLink,
   EmptyState,
   Eyebrow,
   Modal,
   Progress,
 } from "../components/ui";
+import {
+  lessonsFor,
+  readAcademicContext,
+  type LearnerGrade,
+} from "../domain/curriculum";
+import { lessons } from "../data/demo";
+import { curriculum } from "../data/curriculum";
 const subjectList: Subject[] = [
   "Mathematics",
   "Science",
@@ -41,16 +47,18 @@ export function Tutors() {
   const navigate = useNavigate();
   const catalog = useTutorCatalog();
   const [query, setQuery] = useState("");
-  const [language, setLanguage] = useState<Language>(store.data.language);
-  const [grade, setGrade] = useState(store.data.grade);
+  const incoming = readAcademicContext(params, store.data);
+  const [language, setLanguage] = useState<Language>(incoming.language);
+  const [grade, setGrade] = useState<LearnerGrade>(incoming.grade);
   const [available, setAvailable] = useState(false);
   const [sort, setSort] = useState("match");
   const [profile, setProfile] = useState<Tutor | null>(null);
   const [request, setRequest] = useState<MatchRequest | null>(null);
   const [slot, setSlot] = useState("");
-  const subject = subjectList.includes(params.get("subject") as Subject)
-    ? (params.get("subject") as Subject)
-    : store.data.subject;
+  const subject = incoming.subject;
+  const academic = { ...incoming, grade, language, subject };
+  const library = lessonsFor(lessons, academic);
+  const selectedLesson = library.find((l) => l.id === params.get("lesson"));
   const ranked = rankTutors(catalog, grade, subject, language);
   const filtered = ranked
     .filter(
@@ -73,14 +81,9 @@ export function Tutors() {
       store.request(
         tutor.id,
         subject,
-        subject === "Mathematics"
-          ? "Fractions, made familiar"
-          : subject === "Science"
-            ? "A leaf’s little kitchen"
-            : subject === "English"
-              ? "A story in three times"
-              : "Your village, your voice",
+        selectedLesson?.title ?? `Grade ${grade} ${subject} · open question`,
         scheduled,
+        { academic, lessonId: selectedLesson?.id },
       ),
     );
   }
@@ -107,6 +110,14 @@ export function Tutors() {
           </p>
         </div>
       </div>
+      <p className="academic-coverage">
+        Seeking help for{" "}
+        {curriculum.boards.find((b) => b.id === academic.boardId)?.name} · Grade{" "}
+        {grade} · {subject} · {language}
+        {selectedLesson ? ` · ${selectedLesson.title}` : " · open question"}.
+        Tutor grade eligibility is checked separately; board expertise is not
+        verified in this demo.
+      </p>
       <div className="tutor-filters">
         <label className="search-input">
           <Search size={17} />
@@ -121,7 +132,12 @@ export function Tutors() {
           Subject
           <select
             value={subject}
-            onChange={(e) => setParams({ subject: e.target.value })}
+            onChange={(e) => {
+              const next = new URLSearchParams(params);
+              next.set("subject", e.target.value);
+              next.delete("lesson");
+              setParams(next);
+            }}
           >
             {subjectList.map((s) => (
               <option key={s}>{s}</option>
@@ -132,7 +148,7 @@ export function Tutors() {
           Your grade
           <select
             value={grade}
-            onChange={(e) => setGrade(Number(e.target.value))}
+            onChange={(e) => setGrade(Number(e.target.value) as LearnerGrade)}
           >
             {Array.from({ length: 7 }, (_, i) => (
               <option value={i + 4} key={i}>
@@ -269,9 +285,14 @@ export function Tutors() {
           >
             Reset filters
           </Button>
-          <ButtonLink to="/assistant">
-            Ask a doubt <Sparkles size={16} />
-          </ButtonLink>
+          <Button
+            onClick={() => {
+              store.setPreferences(academic);
+              navigate("/assistant");
+            }}
+          >
+            Ask about Grade {grade} {subject} <Sparkles size={16} />
+          </Button>
         </EmptyState>
       )}
       <div className="matching-explainer">
@@ -398,7 +419,7 @@ function MatchFlow({
   candidates: Tutor[];
   onClose: () => void;
 }) {
-  const { requests, request, updateRequest } = useStore();
+  const { requests, request, updateRequest, setPreferences } = useStore();
   const [activeId, setActiveId] = useState(initial.id);
   const [now, setNow] = useState(Date.now());
   const [tried, setTried] = useState([initial.tutorId]);
@@ -439,7 +460,15 @@ function MatchFlow({
       ...p,
       `${tutor.name}: ${active.status}. Trying the next compatible peer.`,
     ]);
-    const nextRequest = request(next.id, initial.subject, initial.topic);
+    const nextRequest = request(
+      next.id,
+      initial.subject,
+      initial.topic,
+      undefined,
+      initial.academic
+        ? { academic: initial.academic, lessonId: initial.lessonId }
+        : undefined,
+    );
     setTried((p) => [...p, next.id]);
     setActiveId(nextRequest.id);
   }, [
@@ -476,9 +505,15 @@ function MatchFlow({
               90-second overall limit. Explore a curated explanation or try
               another time.
             </p>
-            <ButtonLink to="/assistant">
-              Ask a doubt <ArrowUpRight size={16} />
-            </ButtonLink>
+            <Button
+              onClick={() => {
+                if (initial.academic) setPreferences(initial.academic);
+                navigate("/assistant");
+              }}
+            >
+              Ask about Grade {initial.academic?.grade ?? "—"} {initial.subject}{" "}
+              <ArrowUpRight size={16} />
+            </Button>
           </>
         ) : active.status === "accepted" ? (
           <>

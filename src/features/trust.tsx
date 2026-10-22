@@ -1,3 +1,8 @@
+import { lessonsFor, progressFor, subjectOptions } from "../domain/curriculum";
+import {
+  AcademicContextPicker,
+  CoverageNote,
+} from "../components/academic-context";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -12,7 +17,6 @@ import {
   BookOpen,
   LockKeyhole,
   RefreshCw,
-  Globe2,
   Wifi,
   Download,
   Users,
@@ -33,7 +37,8 @@ export function Guardian() {
   const [language, setLanguage] = useState<Language>(data.language);
   const [consent, setConsent] = useState(false);
   const count = completed.length;
-  const learned = lessons.filter((l) => data.progress[l.id] === 100).length;
+  const library = lessonsFor(lessons, data, true);
+  const learned = library.filter((l) => data.progress[l.id] === 100).length;
   const digest: Record<Language, string> = {
     English: `Village Vidya: Aarav completed ${count} practice sessions and ${learned} learning checkpoints. A little progress, together. Demo only.`,
     हिन्दी: `विलेज विद्या: आरव ने ${count} अभ्यास सत्र और ${learned} सीखने के चरण पूरे किए। साथ सीखें, आगे बढ़ें। केवल डेमो।`,
@@ -58,6 +63,9 @@ export function Guardian() {
             <div>
               <Eyebrow>YOUR LEARNER</Eyebrow>
               <h2>Aarav’s small steps.</h2>
+              <p className="small muted">
+                Grade {data.grade} · {data.language} · selected board
+              </p>
             </div>
             <span>Fictional profile</span>
           </div>
@@ -71,17 +79,14 @@ export function Guardian() {
               <span>checkpoints understood</span>
             </div>
           </div>
-          {["Mathematics", "Science", "English"].map((s) => {
-            const list = lessons.filter((l) => l.subject === s);
-            const value = Math.round(
-              list.reduce((n, l) => n + (data.progress[l.id] || 0), 0) /
-                list.length,
-            );
+          {subjectOptions.map((s) => {
+            const list = library.filter((l) => l.subject === s);
+            const value = progressFor(list, data.progress).percent;
             return (
               <div className="guardian-subject" key={s}>
                 <span>{s}</span>
                 <Progress value={value} label={`${s} demo mastery`} />
-                <strong>{value}%</strong>
+                <strong>{list.length ? `${value}%` : "No content"}</strong>
               </div>
             );
           })}
@@ -451,29 +456,8 @@ export function Settings() {
         </h1>
         <p>Simple choices for a calmer learning experience.</p>
       </div>
-      <section className="settings-section">
-        <div>
-          <Globe2 size={22} />
-          <h2>Learning language</h2>
-          <p>
-            Greeting and workspace navigation use your choice. Lesson
-            translation is planned.
-          </p>
-        </div>
-        <label className="field">
-          <span className="sr-only">Choose learning language</span>
-          <select
-            value={data.language}
-            onChange={(e) =>
-              setPreferences({ language: e.target.value as Language })
-            }
-          >
-            {["English", "हिन्दी", "मराठी", "తెలుగు"].map((l) => (
-              <option key={l}>{l}</option>
-            ))}
-          </select>
-        </label>
-      </section>
+      <AcademicContextPicker />
+      <CoverageNote />
       <section className="settings-section">
         <div>
           <Wifi size={22} />

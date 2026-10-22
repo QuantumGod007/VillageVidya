@@ -1,3 +1,5 @@
+import { lessonsFor, progressFor } from "../domain/curriculum";
+import { curriculum } from "../data/curriculum";
 import "./role-dashboards.css";
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -67,7 +69,8 @@ function PlannedSession({
               {tutor ? "With Aarav" : `With ${peer?.name ?? "your demo tutor"}`}
             </p>
             <span className="role-caption">
-              Fictional plan · no real booking
+              Fictional plan · Grade {session.academic?.grade ?? "—"} ·{" "}
+              {session.academic?.language ?? "English"} · no real booking
             </span>
             <Link className="role-text-link" to="/sessions">
               View session <ArrowUpRight size={14} />
@@ -136,11 +139,13 @@ export function LearnerDashboard() {
   const ready = sessions.find((session) => !session.scheduled);
   const planned = nextPlannedSession(sessions);
   const pending = requests.find((request) => request.status === "pending");
-  const next = nextLesson(lessons, data.progress, data.subject);
-  const fullyComplete = lessons.filter(
+  const library = lessonsFor(lessons, data);
+  const summary = progressFor(library, data.progress, data.saved);
+  const next = nextLesson(lessons, data.progress, data);
+  const fullyComplete = library.filter(
     (lesson) => data.progress[lesson.id] === 100,
   ).length;
-  const continuing = lessons
+  const continuing = library
     .filter(
       (lesson) =>
         (data.progress[lesson.id] || 0) > 0 &&
@@ -153,18 +158,20 @@ export function LearnerDashboard() {
     )
     .slice(0, 3);
   const activity = [
-    ...learningActivity.map((item) => ({
-      id: item.id,
-      at: item.at,
-      title:
-        lessons.find((lesson) => lesson.id === item.lessonId)?.title ??
-        "Lesson checkpoint",
-      detail:
-        item.score === 100
-          ? "Checkpoint understood"
-          : "Checkpoint attempted · keep practising",
-      to: `/lesson/${item.lessonId}`,
-    })),
+    ...learningActivity
+      .filter((item) => library.some((l) => l.id === item.lessonId))
+      .map((item) => ({
+        id: item.id,
+        at: item.at,
+        title:
+          lessons.find((lesson) => lesson.id === item.lessonId)?.title ??
+          "Lesson checkpoint",
+        detail:
+          item.score === 100
+            ? "Checkpoint understood"
+            : "Checkpoint attempted · keep practising",
+        to: `/lesson/${item.lessonId}`,
+      })),
     ...completed.map((item) => ({
       id: item.id,
       at: item.date,
@@ -179,7 +186,9 @@ export function LearnerDashboard() {
     ? "Your peer is ready to help."
     : next
       ? next.title
-      : "You’ve completed the demo checkpoints.";
+      : library.length
+        ? "You’ve completed these practice checkpoints."
+        : "Your next chapter is still to come.";
   return (
     <div className="role-dashboard learner-overview">
       <header className="role-page-heading">
@@ -188,7 +197,10 @@ export function LearnerDashboard() {
           {languageLabels[data.language].hello}, <em>Aarav.</em>
         </h1>
         <div className="role-context">
-          <span>Grade {data.grade}</span>
+          <span>
+            {curriculum.boards.find((b) => b.id === data.boardId)?.name} · Grade{" "}
+            {data.grade}
+          </span>
           <span>{data.language}</span>
           <span>{data.subject}</span>
           <Link to="/settings" aria-label="Change learning preferences">
@@ -203,24 +215,26 @@ export function LearnerDashboard() {
               ? "READY FOR LOCAL PRACTICE"
               : next
                 ? "YOUR NEXT STEP"
-                : "A MILESTONE WORTH KEEPING"}
+                : library.length
+                  ? "A MILESTONE WORTH KEEPING"
+                  : "CURRICULUM COVERAGE"}
           </Eyebrow>
           <h2 id="next-action-title">{primaryTitle}</h2>
           <p>
             {ready
-              ? `${ready.topic} · with ${tutors.find((person) => person.id === ready.tutorId)?.name ?? "a demo peer"}. Continue the conversation when you’re ready.`
+              ? `${ready.topic} · with ${tutors.find((person) => person.id === ready.tutorId)?.name ?? "a demo peer"}. Grade ${ready.academic?.grade ?? data.grade} · ${ready.academic?.language ?? data.language}. Continue the conversation when you’re ready.`
               : next
-                ? next.subject === data.subject
-                  ? `A small step in ${data.subject.toLowerCase()}, based on your saved demo progress.`
-                  : "Your selected subject’s demo checkpoints are complete. Here’s an unfinished idea from the library."
-                : "Review a familiar idea or find a peer to help you explore it in another way."}
+                ? `A small step in Grade ${data.grade} ${data.subject.toLowerCase()}, based on your saved practice progress.`
+                : library.length
+                  ? "Review a familiar idea or find a peer to explore it in another way."
+                  : `No ${data.language} lessons have been added for Grade ${data.grade} ${data.subject} on this board yet. Choose another academic context in My Learning or ask a peer tutor for help.`}
           </p>
           {!ready && next && (
             <div className="role-lesson-meta">
               <span>
                 {next.subject} · Grade {next.grade} · {next.minutes} min
               </span>
-              <span>Original demo note</span>
+              <span>Original practice note</span>
             </div>
           )}
           {pending && (
@@ -242,7 +256,9 @@ export function LearnerDashboard() {
               ? "Join practice"
               : next
                 ? "Continue learning"
-                : "Review the library"}
+                : library.length
+                  ? "Review the library"
+                  : "Explore academic context"}
             <ArrowRight size={16} />
           </ButtonLink>
         </div>
@@ -312,12 +328,16 @@ export function LearnerDashboard() {
                   <h3>
                     {next
                       ? "One idea at a time."
-                      : "All demo checkpoints complete."}
+                      : library.length
+                        ? "All selected checkpoints complete."
+                        : "No practice in this context yet."}
                   </h3>
                   <p>
                     {next
                       ? "Your suggested lesson is above. Other lessons you start will appear here."
-                      : "Revisit the library whenever you want to practise again."}
+                      : library.length
+                        ? "Revisit the library whenever you want to practise again."
+                        : "My Learning shows available subjects, chapters and coverage gaps."}
                   </p>
                 </div>
               </div>
@@ -370,13 +390,13 @@ export function LearnerDashboard() {
             <div className="role-quiet-stat">
               <strong>
                 {fullyComplete}
-                <small> / {lessons.length}</small>
+                <small> / {library.length}</small>
               </strong>
-              <span>demo checkpoints complete</span>
+              <span>selected checkpoints complete</span>
             </div>
             <div className="role-summary-line">
               <span>Saved lessons</span>
-              <strong>{data.saved.length}</strong>
+              <strong>{summary.saved}</strong>
             </div>
             <Link to="/learn/progress" className="role-text-link">
               View progress <ArrowUpRight size={14} />
@@ -407,7 +427,7 @@ export function LearnerDashboard() {
         </aside>
       </div>
       <p className="role-footnote">
-        Fictional profile · a small mixed-grade demo library · progress on this
+        Fictional profile · progress for the selected academic context on this
         device, activity for this visit.
       </p>
     </div>
@@ -435,7 +455,15 @@ export function TutorDashboard() {
   const planned = nextPlannedSession(accepted);
   const latest = [...own].sort((a, b) => b.date - a.date)[0];
   function sampleRequest() {
-    request(tutor.id, "Mathematics", "Fractions, made familiar");
+    request(tutor.id, "Mathematics", "Keeping the balance", undefined, {
+      academic: {
+        boardId: "cbse",
+        grade: 8,
+        subject: "Mathematics",
+        language: "English",
+      },
+      lessonId: "equations",
+    });
     toast(
       "Fictional practice request created. It expires after 45 seconds; no learner was contacted.",
     );
@@ -475,7 +503,8 @@ export function TutorDashboard() {
             <article className="role-request-row" key={item.id}>
               <div>
                 <span className="role-caption">
-                  Aarav · Grade {data.grade} · {data.language}
+                  Aarav · Grade {item.academic?.grade ?? data.grade} ·{" "}
+                  {item.academic?.language ?? data.language}
                 </span>
                 <h3>{item.topic}</h3>
                 <p>Fictional request · {item.subject}</p>

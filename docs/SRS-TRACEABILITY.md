@@ -53,3 +53,7 @@ Baseline: supplied `202401100138_SAD_A1.pdf`, 25 physical pages, read in full. T
 6. Static React + a relational foundation replaces the proposed multi-service deployment for this increment. FastAPI/native Android/Redis/Qdrant are deferred explicitly.
 7. No external stock photography, heavy video, paid services or analytics are introduced.
 8. The SRS gives no comprehensive session-count rules beyond its Mentor example; the implementation documents the chosen interpretation rather than inventing hidden requirements.
+
+## Phase 4 academic refinement
+
+CURR-1/2 now have a typed Board → Grade → Subject → Chapter → Lesson → Assessment local catalog, explicit edition-specific reference metadata and coverage gaps. Learner Grades 4–10 and all four context dimensions constrain discovery and recommendations. PROG-1 counts/checkpoints are scoped consistently without discarding legacy records. DOUBT-1’s curated explanations use that same context; this does not satisfy live grounded retrieval. MATCH-1 retains tutor academic eligibility and snapshots requested learner context through cascade/rooms. Official ingestion, semantic/vector retrieval, translations and persistence remain deferred. See [PHASE-4.md](PHASE-4.md) for grade-wise coverage, source verification and the four-state inventory.

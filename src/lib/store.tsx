@@ -15,9 +15,16 @@ import type {
   Subject,
 } from "../domain/types";
 import { expireRequest } from "../domain/learning";
+import {
+  academicContextSchema,
+  gradeSchema,
+  lessonsFor,
+} from "../domain/curriculum";
+import { lessons } from "../data/demo";
 const storageKey = "village-vidya-fictional-demo-v1";
 const savedSchema = z.object({
-  grade: z.number().int().min(4).max(12),
+  boardId: academicContextSchema.shape.boardId.default("cbse"),
+  grade: gradeSchema,
   language: z.enum(["English", "हिन्दी", "मराठी", "తెలుగు"]),
   subject: z.enum(["Mathematics", "Science", "English", "Social Science"]),
   progress: z.record(z.string(), z.number().min(0).max(100)),
@@ -29,6 +36,7 @@ const savedSchema = z.object({
 });
 type SavedState = z.infer<typeof savedSchema>;
 const defaults: SavedState = {
+  boardId: "cbse",
   grade: 8,
   language: "English",
   subject: "Mathematics",
@@ -48,9 +56,14 @@ const defaults: SavedState = {
 };
 function initialState() {
   try {
-    return savedSchema.parse(
-      JSON.parse(localStorage.getItem(storageKey) || "null"),
-    );
+    const raw = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (!raw || typeof raw !== "object") return defaults;
+    // Old learner preferences allowed Grades 11–12. Normalize only that field;
+    // keep valid legacy progress/bookmarks and assign the original CBSE sample.
+    return savedSchema.parse({
+      ...raw,
+      grade: gradeSchema.catch(8).parse(raw.grade),
+    });
   } catch {
     return defaults;
   }
@@ -81,7 +94,13 @@ interface AppStore {
     value: Partial<
       Pick<
         SavedState,
-        "grade" | "language" | "subject" | "available" | "lowData" | "goal"
+        | "boardId"
+        | "grade"
+        | "language"
+        | "subject"
+        | "available"
+        | "lowData"
+        | "goal"
       >
     >,
   ) => void;
@@ -93,6 +112,10 @@ interface AppStore {
     subject: Subject,
     topic: string,
     scheduled?: string,
+    context?: {
+      academic: import("../domain/curriculum").AcademicContext;
+      lessonId?: string;
+    },
   ) => MatchRequest;
   updateRequest: (id: string, status: MatchRequest["status"]) => void;
   completed: CompletedSession[];
@@ -194,8 +217,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setLearningActivity([]);
       setMessage("The fictional demo has been reset.");
     },
-    setPreferences: (v) => setData((p) => ({ ...p, ...v })),
+    setPreferences: (v) => setData((p) => savedSchema.parse({ ...p, ...v })),
     saveLesson: (id) =>
+      lessons.some((l) => l.id === id) &&
       setData((p) => ({
         ...p,
         saved: p.saved.includes(id)
@@ -203,6 +227,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           : [...p.saved, id],
       })),
     completeLesson: (id, score) => {
+      if (
+        !lessons.some((l) => l.id === id) ||
+        !Number.isFinite(score) ||
+        score < 0 ||
+        score > 100
+      )
+        return;
       const event = {
         id: crypto.randomUUID(),
         lessonId: id,
@@ -217,15 +248,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     },
     learningActivity,
     requests,
-    request: (tutorId, subject, topic, scheduled) => {
+    request: (tutorId, subject, topic, scheduled, context) => {
+      const academic = academicContextSchema.parse(
+        context?.academic ?? { ...data, subject },
+      );
+      const attached = lessonsFor(lessons, academic).find((l) =>
+        context?.lessonId ? l.id === context.lessonId : l.title === topic,
+      );
       const next: MatchRequest = {
         id: crypto.randomUUID(),
         tutorId,
         subject,
-        topic,
+        topic: attached?.title ?? topic,
         scheduled: scheduled ?? null,
         status: "pending",
         createdAt: Date.now(),
+        academic,
+        lessonId: attached?.id,
       };
       setRequests((p) => [...p.filter((r) => r.status !== "pending"), next]);
       return next;

@@ -19,10 +19,22 @@ interface Turn {
   question: string;
   lessonId: string | null;
 }
+import { lessonsFor, tutorContextUrl } from "../domain/curriculum";
+import { curriculum } from "../data/curriculum";
 export function Assistant() {
-  const [params] = useSearchParams();
-  const chosen = lessons.find((l) => l.id === params.get("topic"));
   const { data } = useStore();
+  // Remount conversation when the academic context changes, including pending replies.
+  return (
+    <AcademicAssistant
+      key={`${data.boardId}-${data.grade}-${data.subject}-${data.language}`}
+    />
+  );
+}
+function AcademicAssistant() {
+  const [params] = useSearchParams();
+  const { data } = useStore();
+  const library = lessonsFor(lessons, data);
+  const chosen = library.find((l) => l.id === params.get("topic"));
   const [text, setText] = useState(
     chosen ? `Help me understand ${chosen.title.toLowerCase()}` : "",
   );
@@ -46,7 +58,7 @@ export function Assistant() {
     const clean = redactContact(question.trim());
     setText("");
     setLoading(true);
-    const match = lessons.find(
+    const match = library.find(
       (l) =>
         l.keywords.some((k) => clean.toLowerCase().includes(k)) ||
         clean.toLowerCase().includes(l.title.toLowerCase()),
@@ -92,7 +104,10 @@ export function Assistant() {
       <div className="assistant-mode">
         <Sparkles size={16} />
         <span>Curated demo · authored explanations, not live AI</span>
-        <span>Grade {data.grade}</span>
+        <span>
+          {curriculum.boards.find((b) => b.id === data.boardId)?.name} · Grade{" "}
+          {data.grade} · {data.subject} · {data.language}
+        </span>
       </div>
       <div className="assistant-conversation" aria-live="polite">
         {!turns.length && !loading ? (
@@ -106,26 +121,27 @@ export function Assistant() {
               <em>what’s on your mind.</em>
             </h2>
             <p>
-              Choose an example, or ask a question about a topic in our small
-              demo library.
+              {library.length
+                ? "Choose a question from your selected academic context, or ask about one of these practice topics."
+                : "No authored explanations are available for this board, grade, subject and language yet. Change your preferences in My Learning, or ask a peer tutor. Translations are not connected."}
             </p>
             <div className="suggested-prompts">
-              {[
-                "How do I add fractions?",
-                "How do plants make food?",
-                "Help me solve a linear equation",
-                "Explain past and present tense",
-              ].map((q) => (
-                <button key={q} onClick={() => send(q)}>
-                  {q}
-                  <ArrowUpRight size={16} />
-                </button>
-              ))}
+              {library
+                .map((l) => `Help me understand ${l.title}`)
+                .map((q) => (
+                  <button key={q} onClick={() => send(q)}>
+                    {q}
+                    <ArrowUpRight size={16} />
+                  </button>
+                ))}
             </div>
           </div>
         ) : (
           turns.map((turn) => {
-            const lesson = lessons.find((l) => l.id === turn.lessonId);
+            const lesson = library.find((l) => l.id === turn.lessonId);
+            const assessment = curriculum.assessments.find(
+              (a) => a.id === lesson?.assessmentId,
+            );
             return (
               <div className="assistant-turn" key={turn.id}>
                 <div className="assistant-question">
@@ -160,8 +176,8 @@ export function Assistant() {
                               Source: Village Vidya original learning note
                             </strong>
                             <span>
-                              Grade {lesson.grade} foundations · Not verified
-                              against an NCERT retrieval index.
+                              Grade {lesson.grade} · {lesson.language} · Not
+                              verified against an NCERT retrieval index.
                             </span>
                           </div>
                         </div>
@@ -180,8 +196,8 @@ export function Assistant() {
                         </Button>
                         {checkpoint === turn.id && (
                           <div className="inline-checkpoint">
-                            <strong>{lesson.question}</strong>
-                            <p>{lesson.explanation}</p>
+                            <strong>{assessment?.question}</strong>
+                            <p>{assessment?.explanation}</p>
                             <ButtonLink
                               to={`/lesson/${lesson.id}`}
                               variant="ghost"
@@ -200,7 +216,7 @@ export function Assistant() {
                             <ArrowUpRight size={15} />
                           </ButtonLink>
                           <ButtonLink
-                            to={`/tutors?subject=${encodeURIComponent(lesson.subject)}`}
+                            to={tutorContextUrl(data, lesson.id)}
                             variant="ghost"
                           >
                             Talk it through with a peer
@@ -212,11 +228,15 @@ export function Assistant() {
                       <div className="assistant-fallback">
                         <h2>A good question needs a grounded answer.</h2>
                         <p>
-                          This demo doesn’t have a verified explanation for that
-                          question. I won’t invent one. A peer tutor can help
-                          you work it through.
+                          This demo doesn’t have an authored explanation for
+                          that question in your selected academic context. I
+                          won’t invent one. A peer tutor can help you work it
+                          through.
                         </p>
-                        <ButtonLink to="/tutors" variant="outline">
+                        <ButtonLink
+                          to={tutorContextUrl(data)}
+                          variant="outline"
+                        >
                           Find a peer for tomorrow <ArrowUpRight size={16} />
                         </ButtonLink>
                         <p className="small muted">

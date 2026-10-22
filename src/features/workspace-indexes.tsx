@@ -1,9 +1,15 @@
+import { lessonsFor } from "../domain/curriculum";
+import {
+  AcademicContextPicker,
+  CoverageNote,
+} from "../components/academic-context";
 import { lessons, demoProfiles } from "../data/demo";
 import { useStore } from "../lib/store";
 import { ButtonLink, Eyebrow, Progress } from "../components/ui";
 export function LearningProgress() {
   const { data, completed } = useStore();
-  const count = lessons.filter(
+  const library = lessonsFor(lessons, data);
+  const count = library.filter(
     (lesson) => data.progress[lesson.id] === 100,
   ).length;
   return (
@@ -17,14 +23,22 @@ export function LearningProgress() {
           Checkpoints from the fictional lesson library, saved on this device.
         </p>
       </div>
+      <AcademicContextPicker />
+      <CoverageNote />
       <p className="workspace-index-summary">
         <strong>
-          {count} of {lessons.length}
+          {count} of {library.length}
         </strong>{" "}
         checkpoints completed · {completed.length} practice sessions this visit
       </p>
+      {!library.length && (
+        <p>
+          No checkpoint records for this academic context. Your progress in
+          other grades is kept.
+        </p>
+      )}
       <div className="workspace-index-list">
-        {lessons.map((lesson) => (
+        {library.map((lesson) => (
           <article key={lesson.id}>
             <div>
               <span className="small muted">
@@ -49,8 +63,7 @@ export function LearningProgress() {
       </div>
       <p className="small muted">
         This is demo checkpoint progress, not a formal academic assessment. This
-        demo includes a small mixed-grade library. Each lesson displays its own
-        grade.
+        view includes only your selected board, grade, subject and language.
       </p>
     </div>
   );
