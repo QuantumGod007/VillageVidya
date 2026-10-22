@@ -48,6 +48,12 @@ The Class VIII PDF was readable through the web tool. The Class X chapter PDF ti
 
 Browser verification uses the running application with a real fictional learner login: grade switching, Grade 4 empty state, Grade 10 checkpoint (100% saved), and academic links. CSS viewports 320 and 390 were inspected on mobile; My Learning was also checked at 768, 1024, 1280 and 1440 CSS pixels. Document width matched viewport width for the tested layouts. The temporary ignored same-origin frame reports viewport and document widths; this is CSS layout testing, not physical-device emulation. Only two screenshots are retained in [screenshots/phase-4](screenshots/phase-4), without rebuilding historic branches or regenerating baselines.
 
+## Quick review recipe
+
+1. In My Learning, select CBSE, Grade 8, Mathematics and English. Only **Keeping the balance** should appear.
+2. Change to Grade 4. Expect the coverage empty state, with no substituted Grade 8 lesson.
+3. Change to Grade 10. Open **The building blocks of a number**, complete its checkpoint, and follow **Next: Finding common ground**. Switching back to Grade 8 should retain its previous progress and bookmarks.
+
 ## Status inventory
 
 | State                                 | Scope                                                                                                                                                                                                                          |
