@@ -1,0 +1,49 @@
+{
+  "name": "village-vidya",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -b && vite build && node scripts/build-offline.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "typecheck": "tsc -b",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "^5.2.8",
+    "@fontsource/instrument-serif": "^5.2.8",
+    "@hookform/resolvers": "^5.2.2",
+    "@tailwindcss/vite": "^4.1.18",
+    "lucide-react": "^0.468.0",
+    "motion": "^12.23.26",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-hook-form": "^7.71.0",
+    "react-router-dom": "^7.12.0",
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.3.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/node": "^22.19.7",
+    "@types/react": "^19.2.8",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.26",
+    "globals": "^16.5.0",
+    "jsdom": "^26.1.0",
+    "prettier": "^3.9.10",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.53.1",
+    "vite": "^7.3.1",
+    "vitest": "^5.0.5"
+  }
+}
