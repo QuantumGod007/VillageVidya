@@ -62,3 +62,7 @@ No migration is included or applied. A future audited server must own writes to 
 ## Dashboard state boundary (Phase 3)
 
 `role-dashboards.tsx` composes learner/tutor content with scoped CSS. `domain/dashboard.ts` selects unfinished lessons, open requests and known future IST demo slot labels. `StoreProvider.learningActivity` holds up to 30 checkpoint metadata events in memory; saved progress still uses its existing validated schema. Logout, reset and demo expiry clear visit records. The overview reads the same derived tutor catalog as discovery. Stopped requests are cancelled locally so dashboard recommendations cannot reopen safety-stopped rooms. See [PHASE-3.md](PHASE-3.md).
+
+## Academic context boundary (Phase 4)
+
+`domain/curriculum.ts` owns learner Grades 4–10 and academic context validation. `data/curriculum.ts` supplies the local catalog through a typed repository contract, with board/grade/subject/chapter foreign keys and separate lesson/assessment records. Shared filters drive discovery, recommendations, saved counts, progress and curated AI. Tutor grades stay separate. Request snapshots retain the learner context and eligible lesson through cascading and practice rooms. Legacy preferences default to the original CBSE sample; invalid old learner grades normalize to 8 without discarding valid checkpoint/bookmark data. No database is connected. See [PHASE-4.md](PHASE-4.md) for coverage, provenance, migration and limitations.

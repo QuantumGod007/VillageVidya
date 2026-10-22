@@ -120,7 +120,13 @@ export function redactContact(text: string) {
     .replace(/(?:https?:\/\/|www\.)\S+/gi, "[link removed]");
 }
 export const profileSchema = z.object({
-  grade: z.coerce.number().int().min(4).max(12),
+  boardId: z.enum(["cbse", "maharashtra"]).default("cbse"),
+  grade: z.coerce
+    .number()
+    .int()
+    .min(4)
+    .max(10)
+    .transform((v) => v as import("./curriculum").LearnerGrade),
   language: z.enum(["English", "हिन्दी", "मराठी", "తెలుగు"]),
   subject: z.enum(["Mathematics", "Science", "English", "Social Science"]),
   fictionalOnly: z

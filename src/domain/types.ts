@@ -1,3 +1,4 @@
+import type { AcademicContext, BoardId, LearnerGrade } from "./curriculum";
 export type Role = "learner" | "tutor" | "guardian" | "champion" | "admin";
 export type Language = "English" | "हिन्दी" | "मराठी" | "తెలుగు";
 export type Subject = "Mathematics" | "Science" | "English" | "Social Science";
@@ -20,19 +21,19 @@ export interface Tutor {
   tier: Tier;
 }
 export interface Lesson {
+  boardId: BoardId;
+  chapterId: string;
+  assessmentId: string;
+  language: Language;
   id: string;
   subject: Subject;
   title: string;
   subtitle: string;
-  grade: number;
+  grade: LearnerGrade;
   minutes: number;
   concept: string;
   steps: string[];
   example: string;
-  question: string;
-  options: string[];
-  answer: number;
-  explanation: string;
   keywords: string[];
 }
 export type MatchStatus =
@@ -45,6 +46,8 @@ export interface MatchRequest {
   status: MatchStatus;
   createdAt: number;
   scheduled: string | null;
+  academic?: AcademicContext;
+  lessonId?: string;
 }
 export type SessionStatus =
   "active" | "reconnecting" | "completed" | "terminated";

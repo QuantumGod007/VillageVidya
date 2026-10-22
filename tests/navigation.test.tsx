@@ -71,7 +71,7 @@ describe("workspace routes and navigation", () => {
     }
   });
   it("retains the learning parent and breadcrumb on lesson deep links", async () => {
-    open("learner", "/lesson/fractions");
+    open("learner", "/lesson/equations");
     const nav = await screen.findByRole("navigation", {
       name: "Workspace navigation",
     });
@@ -79,7 +79,7 @@ describe("workspace routes and navigation", () => {
       within(nav).getByRole("link", { name: "My Learning" }),
     ).toHaveAttribute("aria-current", "page");
     expect(
-      await screen.findByRole("heading", { name: /Fractions, made familiar/ }),
+      await screen.findByRole("heading", { name: /Keeping the balance/ }),
     ).toBeInTheDocument();
     expect(
       within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
@@ -192,9 +192,7 @@ describe("workspace routes and navigation", () => {
     await user.click(
       await screen.findByRole("link", { name: "Continue learning" }),
     );
-    await user.click(
-      await screen.findByRole("radio", { name: /3\/4 of a roti/ }),
-    );
+    await user.click(await screen.findByRole("radio", { name: /^A 7$/ }));
     await user.click(
       screen.getByRole("button", { name: "Check my understanding" }),
     );
@@ -205,7 +203,7 @@ describe("workspace routes and navigation", () => {
     );
     expect(
       await screen.findByRole("progressbar", {
-        name: "Fractions, made familiar mastery",
+        name: "Keeping the balance mastery",
       }),
     ).toHaveAttribute("aria-valuenow", "100");
   });

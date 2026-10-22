@@ -51,6 +51,7 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
   >({
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      boardId: data.boardId,
       grade: data.grade,
       language: data.language,
       subject: data.subject,
@@ -177,6 +178,7 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
               className="onboarding-form"
               onSubmit={handleSubmit((values) => {
                 setPreferences({
+                  boardId: values.boardId,
                   grade: values.grade,
                   language: values.language,
                   subject: values.subject,
@@ -195,9 +197,22 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
                 <ShieldCheck size={20} />
               </div>
               <label className="field">
+                Academic board
+                <select {...register("boardId")}>
+                  <option value="cbse">CBSE · limited NCERT sample</option>
+                  <option value="maharashtra">
+                    Maharashtra State Board · no catalog yet
+                  </option>
+                </select>
+              </label>
+              <p className="small muted">
+                Learner preferences only. Tutor academic grades are verified
+                separately. Lessons are currently available only in English.
+              </p>
+              <label className="field">
                 Academic grade
                 <select {...register("grade")}>
-                  {Array.from({ length: 9 }, (_, i) => (
+                  {Array.from({ length: 7 }, (_, i) => (
                     <option key={i} value={i + 4}>
                       Grade {i + 4}
                     </option>
@@ -205,7 +220,7 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
                 </select>
                 {errors.grade && (
                   <span className="field-error">
-                    Choose a grade from 4 to 12.
+                    Choose a grade from 4 to 10.
                   </span>
                 )}
               </label>

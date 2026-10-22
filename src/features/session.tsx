@@ -44,8 +44,11 @@ export function SessionRoom() {
   } = useStore();
   const match = requests.find((r) => r.id === id);
   const tutor = tutors.find((t) => t.id === match?.tutorId) ?? tutors[0];
-  const lesson =
-    lessons.find((l) => l.subject === match?.subject) ?? lessons[0];
+  const lesson = lessons.find((l) => l.id === match?.lessonId);
+  const topic = lesson?.title ?? match?.topic ?? "An open learning question";
+  const concept =
+    lesson?.concept ??
+    "This is an open-question demo room. No authored lesson is attached. Use the notes and ELIC checkpoints to practise explaining your question; no live tutor or AI is connected.";
   const [started] = useState(Date.now());
   const [now, setNow] = useState(Date.now());
   const [status, setStatus] = useState<SessionStatus>("active");
@@ -56,7 +59,7 @@ export function SessionRoom() {
       at: Date.now(),
       type: "message",
       sender: "tutor",
-      text: `Hi Aarav! I’m ${tutor.name}. Today, let’s explore ${lesson.title.toLowerCase()}. What feels a little tricky?`,
+      text: `Hi Aarav! I’m ${tutor.name}. Today, let’s explore ${topic.toLowerCase()}. What feels a little tricky?`,
     },
   ]);
   const [text, setText] = useState("");
@@ -158,7 +161,7 @@ export function SessionRoom() {
     setText("");
     if (role !== "tutor")
       reply(
-        `${lesson.concept}\n\n${lesson.steps[0]} What do you notice about that example?`,
+        `${concept}\n\n${lesson?.steps[0] ?? "Could you explain where you got stuck?"} What do you notice about that example?`,
       );
   }
   function elic() {
@@ -166,7 +169,7 @@ export function SessionRoom() {
     add("elic", "learner", "ELIC: please try a simpler explanation.");
     setNudge(true);
     reply(
-      `Let’s take a familiar example. ${lesson.example} We can go one small step at a time.`,
+      `Let’s take a familiar example. ${lesson?.example ?? "Tell me what you have tried so far."} We can go one small step at a time.`,
     );
   }
   function finish() {
@@ -178,7 +181,7 @@ export function SessionRoom() {
     finishSession({
       id: match!.id,
       tutorId: tutor.id,
-      topic: lesson.title,
+      topic,
       date: Date.now(),
       minutes: Math.max(1, Math.ceil(elapsed / 60)),
       elic: elicCount,
@@ -215,7 +218,7 @@ export function SessionRoom() {
         </div>
         <div className="summary-note">
           <h2>Take the idea with you.</h2>
-          <p>{lesson.concept}</p>
+          <p>{concept}</p>
           {notes && (
             <>
               <h3>Your session note</h3>
@@ -228,8 +231,9 @@ export function SessionRoom() {
           </span>
         </div>
         <div className="summary-actions">
-          <ButtonLink to={`/lesson/${lesson.id}`}>
-            Check my understanding <ArrowRight size={16} />
+          <ButtonLink to={lesson ? `/lesson/${lesson.id}` : "/explore"}>
+            {lesson ? "Check my understanding" : "Explore My Learning"}{" "}
+            <ArrowRight size={16} />
           </ButtonLink>
           <ButtonLink
             to={role === "tutor" ? "/studio/feedback" : "/learn"}
@@ -258,11 +262,12 @@ export function SessionRoom() {
           <div>
             <Avatar name={tutor.name} color={tutor.color} />
             <div>
-              <h1>{lesson.title}</h1>
+              <h1>{topic}</h1>
               <p>
                 Aarav & {tutor.name} <span>·</span>
                 {match.subject}
-                <span>·</span>Grade {lesson.grade} foundations
+                <span>·</span>Grade {match.academic?.grade ?? "—"} ·{" "}
+                {match.academic?.language ?? "English"}
               </p>
             </div>
           </div>
@@ -501,10 +506,13 @@ export function SessionRoom() {
             ) : (
               <div className="session-lesson">
                 <Eyebrow>ONE IDEA TO TAKE AWAY</Eyebrow>
-                <h2>{lesson.title}</h2>
-                <p>{lesson.concept}</p>
-                <Link className="text-link" to={`/lesson/${lesson.id}`}>
-                  Read the whole note
+                <h2>{topic}</h2>
+                <p>{concept}</p>
+                <Link
+                  className="text-link"
+                  to={lesson ? `/lesson/${lesson.id}` : "/explore"}
+                >
+                  {lesson ? "Read the whole note" : "Explore My Learning"}
                   <ArrowUpRight size={15} />
                 </Link>
               </div>
