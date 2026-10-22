@@ -6,8 +6,8 @@ The prerequisite milestone is therefore a runnable demo foundation. It contains 
 
 | Milestone | Review boundary | Status |
 | --- | --- | --- |
-| Runnable demo foundation | Existing local app, truthful demo states, domain/interaction tests, build/CI, SRS mapping and original design | First PR; approval required; do not auto-merge |
-| Workspace navigation architecture | Persistent internal shell, focused role navigation, route hierarchy and return paths | Planned; begin only after foundation approval and merge |
+| Runnable demo foundation | Existing local app, truthful demo states, domain/interaction tests, build/CI, SRS mapping and original design | Merged as PR #1 (`c9727a3`) |
+| Workspace navigation architecture | Persistent internal shell, focused role navigation, route hierarchy and return paths | Phase 2 implemented for review; see PHASE-2.md |
 | Learner overview | One next action, next session, continue learning and relevant recent activity | Planned; dependent on navigation |
 | Tutor teaching workflow | Requests and next session first; dedicated schedule/availability and feedback/growth pages | Planned; review as a coherent unit |
 | Sessions and learning progress | Separate lifecycle views, details and purposeful mastery/history destinations | Planned; reassess boundaries after previous merges |
@@ -18,3 +18,5 @@ There is no PR quota. Discovery, the practice room, and the assistant already ha
 For each subsequent milestone: fetch and fast-forward local main after the prior approved merge, create one descriptive branch, implement only that boundary, review the full diff, run relevant tests plus typecheck/lint/build, commit and push, open one PR with UI evidence, verify CI and merge readiness, and wait for human approval. Never force-push, manufacture commits, or merge automatically.
 
 The more detailed [dashboard audit and target architecture](DASHBOARD-UX.md) is a proposed backlog. It has not been implemented by the foundation PR. The public landing page is retained.
+
+Phase 2 follows the explicit branch name `design/workspace-navigation`. Later milestones remain unstarted until this PR is approved and merged and the user supplies the next phase prompt.

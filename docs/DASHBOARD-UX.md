@@ -1,6 +1,6 @@
 # Dashboard UX audit and proposed restructuring
 
-**Status: planned, not implemented by the foundation PR.** Follow the sequential review gates in DEVELOPMENT.md.
+**Status: navigation shell implemented in Phase 2; dashboard content restructuring remains planned.** Follow the sequential review gates in DEVELOPMENT.md.
 
 ## Audit
 
@@ -30,3 +30,7 @@ All internal destinations retain one app shell, clear active navigation, context
 ## Data and safety scope
 
 No database change or new external integration is required. Schedule preferences, session navigation state, and activity are local demo state. All existing demo labels, consent restrictions, role gates, matching rules, and sample AI provenance remain in force. Each future branch is for review and must not be merged automatically.
+
+## Phase 2 implementation boundary
+
+See [PHASE-2.md](PHASE-2.md) for the actual route map and interim section destinations. Shared discovery and lesson routes now retain the workspace, mobile uses the complete role navigation, and marketing chrome stays outside internal workflows. Dashboard content has not been rearranged in depth.
