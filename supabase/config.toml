@@ -24,7 +24,9 @@ sql_paths = ["./seed.sql"]
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = []
+additional_redirect_urls = ["http://127.0.0.1:5173/account/recovery"]
+jwt_expiry = 900
+minimum_password_length = 12
 enable_signup = false
 enable_anonymous_sign_ins = false
 
@@ -39,7 +41,8 @@ enable_signup = false
 enabled = false
 
 [local_smtp]
-enabled = false
+enabled = true
+port = 54324
 
 [storage]
 enabled = false
