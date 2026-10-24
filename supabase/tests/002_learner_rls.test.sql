@@ -23,7 +23,7 @@ insert into public.learner_bookmarks(learner_id,lesson_id) values (auth.uid(),'w
 select pg_temp.assert_true((select count(*)=1 from public.learner_bookmarks where lesson_id='water'), 'repeated own bookmark is idempotent');
 delete from public.learner_bookmarks where learner_id='00000000-0000-0000-0000-000000000002';
 select pg_temp.assert_true((select count(*)=2 from public.learner_bookmarks), 'cross-user bookmark deletion affects no visible row');
-insert into public.learner_academic_enrollments(learner_id,subject_id,language,is_active) values (auth.uid(),'cbse-8-mathematics','English',true);
-select pg_temp.expect_error($q$insert into public.learner_academic_enrollments(learner_id,subject_id,language,is_active) values (auth.uid(),'cbse-6-mathematics','English',true)$q$,'23505','only one active enrollment');
+select public.switch_learner_enrollment('cbse-8-mathematics','English');
+select pg_temp.expect_error($q$insert into public.learner_academic_enrollments(learner_id,subject_id,language,is_active) values (auth.uid(),'cbse-6-mathematics','English',true)$q$,'42501','direct insert cannot bypass atomic switching');
 select pg_temp.expect_error($q$insert into public.learner_academic_enrollments(learner_id,subject_id,language) values ('00000000-0000-0000-0000-000000000002','cbse-8-mathematics','English')$q$,'42501','cannot enroll another learner');
 reset role;

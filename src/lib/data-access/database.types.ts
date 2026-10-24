@@ -511,6 +511,43 @@ export type Database = {
           },
         ];
       };
+      learner_lesson_activity: {
+        Row: {
+          learner_id: string;
+          lesson_id: string;
+          read_at: string | null;
+          started_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          learner_id: string;
+          lesson_id: string;
+          read_at?: string | null;
+          started_at?: string;
+        };
+        Update: {
+          learner_id?: string;
+          lesson_id?: string;
+          read_at?: string | null;
+          started_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "learner_lesson_activity_learner_id_fkey";
+            columns: ["learner_id"];
+            isOneToOne: false;
+            referencedRelation: "learner_profiles";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "learner_lesson_activity_lesson_id_fkey";
+            columns: ["lesson_id"];
+            isOneToOne: false;
+            referencedRelation: "lessons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       learner_profiles: {
         Row: {
           created_at: string;
@@ -931,7 +968,42 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      record_learner_reading: {
+        Args: { p_lesson_id: string; p_mark_read?: boolean };
+        Returns: {
+          learner_id: string;
+          lesson_id: string;
+          read_at: string | null;
+          started_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "learner_lesson_activity";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      switch_learner_enrollment: {
+        Args: {
+          p_language: Database["public"]["Enums"]["learning_language"];
+          p_subject_id: string;
+        };
+        Returns: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          language: Database["public"]["Enums"]["learning_language"];
+          learner_id: string;
+          subject_id: string;
+          updated_at: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "learner_academic_enrollments";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
     };
     Enums: {
       app_role: "learner" | "tutor" | "guardian" | "champion" | "admin";
