@@ -12,7 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:start": "supabase db start --network-id village-vidya-local",
-    "db:reset": "supabase db reset --local",
+    "db:reset": "supabase db reset --local --network-id village-vidya-local",
     "db:test": "node scripts/db/test.mjs",
     "db:test:native": "node scripts/db/test.mjs --native",
     "db:seed:generate": "node scripts/generate-curriculum-seed.mjs",
