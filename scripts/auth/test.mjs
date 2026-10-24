@@ -66,6 +66,10 @@ async function login(details) {
     email: details.email,
     password,
   });
+  if (result.error)
+    throw new Error(
+      `Local ${details.role} sign-in failed (code: ${result.error.code ?? "unknown"}, status: ${result.error.status ?? "unknown"}): ${result.error.message}`,
+    );
   check(
     !result.error && result.data.session,
     `${details.role} can actually sign in`,

@@ -53,6 +53,24 @@ const fallback: AccountContext = {
   updatePassword: unavailable,
   refresh: unavailable,
 };
+// This preference only chooses a UI boundary; it never supplies identity/roles.
+function accountModeRemembered() {
+  try {
+    return (
+      sessionStorage.getItem("vv-workspace-mode") === "account" ||
+      !!localStorage.getItem("vv-real-auth-v1")
+    );
+  } catch {
+    return false;
+  }
+}
+function rememberMode(mode: "account" | "demo") {
+  try {
+    sessionStorage.setItem("vv-workspace-mode", mode);
+  } catch {
+    /* Memory-only mode is still authorized against the server. */
+  }
+}
 const Context = createContext<AccountContext>(fallback);
 // React StrictMode may evaluate render initializers twice. Cache the browser
 // client outside component state so identity and repositories share one instance.
@@ -96,6 +114,7 @@ export function AccountProvider({
     ...empty,
     status: access ? "loading" : configuration.error ? "error" : "disabled",
     message: configuration.error,
+    preferAccount: !!access && accountModeRemembered(),
   });
   const generation = useRef(0);
   const recovery = useRef(false);
@@ -119,11 +138,15 @@ export function AccountProvider({
               status: "anonymous",
               account: null,
               recovery: false,
+              message: p.preferAccount
+                ? "Your session ended. Please sign in again."
+                : p.message,
             }));
           return;
         }
         const account = await verifiedAccount(access!.client);
-        if (!disposed && request === generation.current)
+        if (!disposed && request === generation.current) {
+          rememberMode("account");
           setState({
             status: "authenticated",
             account,
@@ -131,6 +154,7 @@ export function AccountProvider({
             recovery: recovery.current,
             preferAccount: true,
           });
+        }
       } catch (error) {
         if (!disposed && request === generation.current)
           setState({
@@ -228,6 +252,7 @@ export function AccountProvider({
     access,
     async signIn(email, password) {
       if (!access) return unavailable();
+      rememberMode("account");
       ++generation.current;
       setState({ ...empty, status: "loading", preferAccount: true });
       recovery.current = false;
@@ -262,6 +287,7 @@ export function AccountProvider({
     signOut,
     async enterDemo() {
       if (access) await signOut();
+      rememberMode("demo");
       setState((p) => ({ ...p, preferAccount: false, message: "" }));
     },
     async recover(email) {

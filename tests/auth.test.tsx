@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import {
@@ -366,5 +366,39 @@ describe("verified account and demo boundary (mocked transport; real API coverag
     await user.type(screen.getByLabelText("Password"), "bad-password");
     await user.click(screen.getByRole("button", { name: "Sign in securely" }));
     await waitFor(() => expect(screen.getByRole("alert")).toBeInTheDocument());
+  });
+  it("does not resurrect a demo role after an invalid stored real session", async () => {
+    const { access } = setup("tutor", false);
+    sessionStorage.setItem("vv-workspace-mode", "account");
+    sessionStorage.setItem(
+      "vv-demo-role",
+      JSON.stringify({ role: "admin", expires: Date.now() + 900000 }),
+    );
+    open(access, "/admin");
+    expect(
+      await screen.findByRole("heading", { name: "Welcome back." }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Your session ended");
+    expect(
+      screen.queryByRole("navigation", { name: "Workspace navigation" }),
+    ).not.toBeInTheDocument();
+  });
+  it("does not revalidate or unmount the demo on an idle account timer", async () => {
+    const { access } = setup("tutor", false);
+    sessionStorage.setItem(
+      "vv-demo-role",
+      JSON.stringify({ role: "learner", expires: Date.now() + 900000 }),
+    );
+    open(access, "/learn");
+    await screen.findByRole("heading", { name: /Good to see you, Aarav/ });
+    const calls = vi.mocked(access.client.auth.getSession).mock.calls.length;
+    vi.useFakeTimers();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(access.client.auth.getSession).toHaveBeenCalledTimes(calls);
+    expect(
+      screen.getByRole("heading", { name: /Good to see you, Aarav/ }),
+    ).toBeInTheDocument();
   });
 });
