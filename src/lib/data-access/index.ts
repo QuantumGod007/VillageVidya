@@ -7,8 +7,8 @@ import {
   supabaseLearnerRepository,
 } from "./repositories";
 
-// Deliberately not called by the current demo UI. Neither environment variables
-// nor a fictional role can enable a production account or import local progress.
+// One shared authenticated client for identity and repositories. Demo adapters
+// never receive this client or import browser progress into an account.
 export function createDataAccess(options: unknown) {
   const config = dataAccessConfigSchema.parse(options);
   if (config.mode === "demo")
@@ -19,13 +19,16 @@ export function createDataAccess(options: unknown) {
     };
   const client = createClient<Database>(config.url, config.publishableKey, {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      persistSession: true,
+      storageKey: "vv-real-auth-v1",
+      flowType: "pkce",
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   });
   return {
     mode: "supabase" as const,
+    client,
     curriculum: supabaseCurriculumRepository(client),
     learner: supabaseLearnerRepository(client),
   };

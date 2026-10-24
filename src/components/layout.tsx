@@ -15,6 +15,8 @@ import {
   LogOut,
   ChevronRight,
 } from "lucide-react";
+import { useWorkspaceIdentity } from "../lib/auth/provider";
+import { EmptyState } from "./ui";
 import { Brand, ButtonLink, Modal } from "./ui";
 import { demoProfiles } from "../data/demo";
 import { useStore, languageLabels } from "../lib/store";
@@ -30,8 +32,8 @@ import {
 export function Layout() {
   const [menu, setMenu] = useState(false);
   const [info, setInfo] = useState(false);
-  const { role, data, setPreferences, online, storageIssue, message } =
-    useStore();
+  const { role } = useWorkspaceIdentity();
+  const { data, setPreferences, online, storageIssue, message } = useStore();
   const location = useLocation();
   useEffect(() => {
     document.title = "Village Vidya — A little help. A world of possibility.";
@@ -236,22 +238,67 @@ export function Layout() {
   );
 }
 export function Protected({ roles }: { roles: Role[] }) {
-  const { role } = useStore();
-  return canAccess(role, roles) ? <Outlet /> : <Navigate to="/login" replace />;
+  const { role, real, auth } = useWorkspaceIdentity();
+  if (auth.status === "loading")
+    return (
+      <div className="page-loading" role="status">
+        Verifying your account…
+      </div>
+    );
+  if (real && auth.recovery) return <Navigate to="/account/recovery" replace />;
+  if (real && auth.status !== "authenticated")
+    return <Navigate to="/account/sign-in" replace />;
+  if (real && !auth.account?.roles.some((r) => roles.includes(r)))
+    return (
+      <div className="container page">
+        <EmptyState
+          title="This workspace requires another role."
+          description="Your account has no assigned access to this destination."
+        >
+          <ButtonLink to={roleHome[role ?? "learner"]}>
+            Return to your workspace
+          </ButtonLink>
+        </EmptyState>
+      </div>
+    );
+  return canAccess(role, roles) ||
+    (real && auth.account?.roles.some((r) => roles.includes(r))) ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/login" replace />
+  );
 }
 // Public discovery keeps its URLs; signed-in demo profiles retain their workspace.
 export function DiscoveryLayout() {
-  const { role } = useStore();
+  const { role, real, auth } = useWorkspaceIdentity();
+  if (real && auth.status === "loading")
+    return (
+      <div className="page-loading" role="status">
+        Verifying your account…
+      </div>
+    );
+  if (real && auth.recovery) return <Navigate to="/account/recovery" replace />;
+  if (real && auth.status !== "authenticated")
+    return <Navigate to="/account/sign-in" replace />;
   return role ? <Workspace /> : <Layout />;
 }
 export function Workspace() {
-  const { role, data, online, logout, storageIssue, message } = useStore();
+  const { role, real, auth } = useWorkspaceIdentity();
+  const { data, online, logout, storageIssue, message } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [menu, setMenu] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
-  const profile = demoProfiles[role ?? "learner"];
-  const translated = languageLabels[data.language];
+  const profile = {
+    ...demoProfiles[role ?? "learner"],
+    ...(real && auth.account
+      ? { name: auth.account.profile.display_name }
+      : {}),
+  };
+  const language = real
+    ? (auth.account?.profile.preferred_language ?? "English")
+    : data.language;
+  const translated = languageLabels[language];
   const existingTranslations: Record<string, string> = {
     "/learn": translated.home,
     "/explore": translated.learn,
@@ -259,7 +306,7 @@ export function Workspace() {
   };
   const destinations = workspaceNavigation[role ?? "learner"].map((item) =>
     role === "learner" &&
-    data.language !== "English" &&
+    language !== "English" &&
     existingTranslations[item.to]
       ? { ...item, label: existingTranslations[item.to] }
       : item,
@@ -288,10 +335,20 @@ export function Workspace() {
     setMenu(false);
     menuButton.current?.focus();
   }
-  function leave() {
+  async function leave() {
     closeMenu();
-    logout();
-    navigate("/login");
+    if (real) {
+      try {
+        await auth.signOut();
+      } catch {
+        /* Provider keeps the revocation error visible on sign-in. */
+      } finally {
+        navigate("/account/sign-in");
+      }
+    } else {
+      logout();
+      navigate("/login");
+    }
   }
   function navigation(mobile = false) {
     return (
@@ -358,7 +415,7 @@ export function Workspace() {
             <span>{profile.name[0]}</span>
             <div>
               <strong>{profile.name}</strong>
-              <small>Fictional profile</small>
+              <small>{real ? "Adult test account" : "Fictional profile"}</small>
             </div>
           </div>
           <Link to="/">
@@ -366,7 +423,7 @@ export function Workspace() {
           </Link>
           <button onClick={leave}>
             <LogOut size={17} />
-            Leave demo
+            {real ? "Sign out" : "Leave demo"}
           </button>
         </div>
       </aside>
@@ -388,21 +445,27 @@ export function Workspace() {
           </div>
           <span className="workspace-demo-status">
             <span className={online ? "status-dot" : "status-dot offline"} />
-            Fictional demo
+            {real ? "Authenticated account" : "Fictional demo"}
             <span className="workspace-connection">
               {" "}
-              · {online ? "on this device" : "offline"}
+              ·{" "}
+              {real
+                ? "adult test access"
+                : online
+                  ? "on this device"
+                  : "offline"}
             </span>
           </span>
         </header>
         {!online && (
           <div className="offline-banner" role="status">
             <WifiOff size={16} />
-            You’re offline. Previously loaded lessons and local practice are
-            available.
+            {real
+              ? "You’re offline. Account access requires a connection; private account data is not cached for offline use."
+              : "You’re offline. Previously loaded lessons and local practice are available."}
           </div>
         )}
-        {storageIssue && (
+        {storageIssue && !real && (
           <div className="offline-banner" role="alert">
             Browser storage is unavailable. Changes last for this visit only.
           </div>
@@ -451,11 +514,14 @@ export function Workspace() {
           </Link>
           <button onClick={leave}>
             <LogOut size={17} />
-            Leave demo
+            {real ? "Sign out" : "Leave demo"}
           </button>
         </div>
         <p className="small muted">
-          {profile.name} · fictional profile · local demo
+          {profile.name} ·{" "}
+          {real
+            ? "authenticated adult test account"
+            : "fictional profile · local demo"}
         </p>
       </Modal>
       {message && (

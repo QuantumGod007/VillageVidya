@@ -1,5 +1,5 @@
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","role":"authenticated","user_metadata":{"role":"admin"}}',true);
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","session_id":"00000000-0000-0000-0000-000000000001","role":"authenticated","user_metadata":{"role":"admin"}}',true);
 select pg_temp.assert_true(current_user='authenticated' and not (select rolbypassrls from pg_roles where rolname=current_user), 'tests run without bypass RLS');
 select pg_temp.assert_true((select count(*)=1 from public.profiles), 'learner sees own private profile only');
 select pg_temp.assert_true((select count(*)=1 and min(lesson_id)='equations' from public.lesson_progress), 'learner cannot read another progress record');

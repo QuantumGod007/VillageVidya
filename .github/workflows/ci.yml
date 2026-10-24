@@ -27,9 +27,9 @@ jobs:
       - run: npm audit --audit-level=high
 
   database:
-    name: PostgreSQL migrations and RLS
+    name: Supabase Auth, migrations and RLS
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       VV_TEST_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:54322/postgres
     steps:
@@ -42,13 +42,20 @@ jobs:
       - name: Bind local database ports to loopback
         run: docker network create -o com.docker.network.bridge.host_binding_ipv4=127.0.0.1 village-vidya-local
       - run: npm run db:seed:check
-      - run: npm run db:start
+      - run: npm run auth:start
       - name: Fresh migrations and seed
         run: npm run db:reset
       - run: npm run db:test
       - name: Reset, reseed and rerun authorization checks
         run: npm run db:reset && npm run db:test
       - run: npm run db:types:check
+      - run: npm run auth:test
+      - name: Local gateway diagnostics on failure
+        if: failure()
+        run: |
+          docker ps -a --format '{{.Names}}: {{.Status}}'
+          docker logs supabase_kong_village-vidya --tail 20
+          docker logs supabase_auth_village-vidya --tail 20
       - name: Stop isolated local database
         if: always()
         run: npx supabase stop --no-backup

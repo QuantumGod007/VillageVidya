@@ -1,5 +1,5 @@
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000003"}',true);
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000003","session_id":"00000000-0000-0000-0000-000000000003"}',true);
 select pg_temp.assert_true((select count(*)=1 from public.tutor_profiles), 'tutor sees own private record only');
 select pg_temp.assert_true((select academic_grade=11 from public.tutor_profiles), 'tutor Grade 11 not clamped to learner grade range');
 update public.tutor_profiles set bio='An owned biography';

@@ -25,7 +25,7 @@ select pg_temp.assert_true((select count(*)=0 from public.lessons), 'unpublished
 select pg_temp.assert_true((select count(*)=0 from public.academic_subjects), 'subject requires published grade and board');
 reset role;
 set local role authenticated;
-select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000006","role":"authenticated"}',true);
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000006","session_id":"00000000-0000-0000-0000-000000000006","role":"authenticated"}',true);
 select pg_temp.expect_error($q$update public.academic_boards set is_published=true$q$,'42501','even app admin cannot bypass trusted curriculum writes');
 select pg_temp.expect_error($q$delete from public.curriculum_sources$q$,'42501','ordinary authenticated cannot rewrite provenance');
 reset role;

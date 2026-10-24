@@ -24,12 +24,16 @@ sql_paths = ["./seed.sql"]
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:5173"
-additional_redirect_urls = []
+additional_redirect_urls = ["http://127.0.0.1:5173/account/recovery"]
+jwt_expiry = 900
+minimum_password_length = 12
 enable_signup = false
 enable_anonymous_sign_ins = false
 
 [auth.email]
-enable_signup = false
+# This also enables the email sign-in provider. Global auth.enable_signup=false
+# above still rejects every public signup; only trusted adult provisioning exists.
+enable_signup = true
 enable_confirmations = true
 
 [auth.sms]
@@ -39,7 +43,8 @@ enable_signup = false
 enabled = false
 
 [local_smtp]
-enabled = false
+enabled = true
+port = 54324
 
 [storage]
 enabled = false

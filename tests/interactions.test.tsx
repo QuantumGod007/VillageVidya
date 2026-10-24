@@ -149,7 +149,7 @@ describe("learning and onboarding", () => {
       </Wrapper>,
     );
     await user.click(
-      screen.getByRole("button", { name: /Looking to create a real account/ }),
+      screen.getByRole("button", { name: /Have a real account/ }),
     );
     expect(
       screen.getByText("Real registration is not open yet."),

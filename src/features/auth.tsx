@@ -19,6 +19,7 @@ import { Button, ButtonLink, Eyebrow } from "../components/ui";
 import { profileSchema } from "../domain/learning";
 import type { Role } from "../domain/types";
 import { demoProfiles } from "../data/demo";
+import { useAccount } from "../lib/auth/provider";
 import { useStore } from "../lib/store";
 import { roleHome } from "../components/layout";
 const roleIcons = {
@@ -40,6 +41,9 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
   const [real, setReal] = useState(false);
   const { login, data, setPreferences } = useStore();
   const navigate = useNavigate();
+  const account = useAccount();
+  const [entering, setEntering] = useState(false);
+  const [entryError, setEntryError] = useState("");
   const {
     register,
     handleSubmit,
@@ -58,9 +62,19 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
       fictionalOnly: false,
     },
   });
-  function enter() {
-    login(role);
-    navigate(roleHome[role]);
+  async function enter() {
+    setEntering(true);
+    try {
+      await account.enterDemo();
+      login(role);
+      navigate(roleHome[role]);
+    } catch {
+      setEntryError(
+        "Sign out of your real account before entering the demo. Reconnect and try again.",
+      );
+    } finally {
+      setEntering(false);
+    }
   }
   return (
     <div className="container auth-page">
@@ -112,6 +126,11 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
             <span className="status-dot" />
             <span>Interactive demo · no real account needed</span>
           </div>
+          {entryError && (
+            <p className="field-error" role="alert">
+              {entryError}
+            </p>
+          )}
           {real ? (
             <div className="registration-closed">
               <LockKeyhole size={27} />
@@ -121,6 +140,9 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
                 verification, and child-safety services must be connected. We
                 never substitute a demo checkmark for real consent.
               </p>
+              <ButtonLink to="/account/sign-in">
+                Sign in to a provisioned account
+              </ButtonLink>
               <Button variant="outline" onClick={() => setReal(false)}>
                 Explore a fictional profile <ArrowUpRight size={17} />
               </Button>
@@ -157,6 +179,7 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
               </div>
               <Button
                 className="full-width"
+                disabled={entering}
                 onClick={() => (onboarding ? setStage(1) : enter())}
               >
                 Explore as {demoProfiles[role].name}
@@ -170,7 +193,8 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
                 className="text-link auth-real-link"
                 onClick={() => setReal(true)}
               >
-                Looking to create a real account? <ArrowUpRight size={14} />
+                Have a real account, or looking to join?{" "}
+                <ArrowUpRight size={14} />
               </button>
             </>
           ) : (
@@ -267,7 +291,7 @@ export function Auth({ onboarding = false }: { onboarding?: boolean }) {
               {errors.fictionalOnly && (
                 <p className="field-error">{errors.fictionalOnly.message}</p>
               )}
-              <Button className="full-width" type="submit">
+              <Button className="full-width" type="submit" disabled={entering}>
                 Enter my learning space
                 <ArrowUpRight size={17} />
               </Button>

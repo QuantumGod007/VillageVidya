@@ -28,6 +28,9 @@ insert into public.tutor_subject_qualifications(tutor_id,subject_id) values ('00
 insert into public.tutor_languages(tutor_id,language) values ('00000000-0000-0000-0000-000000000003','English');
 insert into public.tutor_availability(tutor_id,weekday,starts_at,ends_at) values ('00000000-0000-0000-0000-000000000003',1,'16:00','17:00');
 
+insert into public.adult_test_accounts(user_id,enabled) select id,true from public.profiles;
+insert into auth.sessions(id,user_id) select id,id from public.profiles;
+
 -- Invoker-only test assertions: queries execute as the actual SET ROLE caller.
 create function pg_temp.assert_true(ok boolean, label text) returns void language plpgsql security invoker as $$
 begin if ok is distinct from true then raise exception 'FAIL: %',label; end if; end $$;

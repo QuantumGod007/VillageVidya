@@ -10,6 +10,7 @@ import "@fontsource/instrument-serif/latin-400.css";
 import "@fontsource/instrument-serif/latin-400-italic.css";
 import "./styles.css";
 import { StoreProvider, useStore } from "./lib/store";
+import { AccountProvider } from "./lib/auth/provider";
 import { AppRoutes } from "./app-routes";
 import { EmptyState } from "./components/ui";
 class ErrorBoundary extends Component<
@@ -57,7 +58,9 @@ function App() {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <StoreProvider>
-      <App />
+      <AccountProvider>
+        <App />
+      </AccountProvider>
     </StoreProvider>
   </React.StrictMode>,
 );
