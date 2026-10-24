@@ -2,7 +2,6 @@ import {
   createContext,
   useContext,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -55,15 +54,13 @@ const fallback: AccountContext = {
   refresh: unavailable,
 };
 const Context = createContext<AccountContext>(fallback);
-export function AccountProvider({
-  children,
-  access: injected,
-}: {
-  children: ReactNode;
-  access?: RealAccess | null;
-}) {
-  const configuration = useMemo(() => {
-    if (injected !== undefined) return { access: injected, error: "" };
+// React StrictMode may evaluate render initializers twice. Cache the browser
+// client outside component state so identity and repositories share one instance.
+let cachedConfiguration:
+  { access: RealAccess | null; error: string } | undefined;
+function runtimeConfiguration() {
+  if (cachedConfiguration) return cachedConfiguration;
+  cachedConfiguration = (() => {
     if (import.meta.env.VITE_APP_MODE !== "supabase")
       return { access: null, error: "" };
     try {
@@ -80,7 +77,20 @@ export function AccountProvider({
           "Real sign-in configuration is invalid. Contact the administrator; the fictional demo is still available.",
       };
     }
-  }, [injected]);
+  })();
+  return cachedConfiguration;
+}
+export function AccountProvider({
+  children,
+  access: injected,
+}: {
+  children: ReactNode;
+  access?: RealAccess | null;
+}) {
+  const configuration =
+    injected !== undefined
+      ? { access: injected, error: "" }
+      : runtimeConfiguration();
   const access = configuration.access;
   const [state, setState] = useState<AuthState>({
     ...empty,
@@ -90,6 +100,7 @@ export function AccountProvider({
   const generation = useRef(0);
   const recovery = useRef(false);
   const signingOut = useRef(false);
+  const sessionPresent = useRef(false);
   const verify = useRef<() => Promise<void>>(async () => {});
   useEffect(() => {
     if (!access) return;
@@ -100,6 +111,7 @@ export function AccountProvider({
       try {
         const session = await access!.client.auth.getSession();
         if (session.error) throw session.error;
+        sessionPresent.current = !!session.data.session;
         if (!session.data.session) {
           if (!disposed && request === generation.current)
             setState((p) => ({
@@ -142,6 +154,7 @@ export function AccountProvider({
       if (event === "SIGNED_OUT") {
         ++generation.current;
         recovery.current = false;
+        sessionPresent.current = false;
         setState((p) => ({
           ...p,
           status: "anonymous",
@@ -167,7 +180,8 @@ export function AccountProvider({
     });
     void validate();
     const check = () => {
-      if (document.visibilityState !== "hidden") void validate();
+      if (sessionPresent.current && document.visibilityState !== "hidden")
+        void validate();
     };
     const timer = setInterval(check, 60_000);
     window.addEventListener("focus", check);

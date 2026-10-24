@@ -19,6 +19,26 @@ const { verifiedAccount } = await import(
   `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`
 );
 const config = localConfig();
+// Database resets can briefly leave the gateway's Auth upstream reconnecting.
+// Probe the real service, with a bounded wait; never replace it with a fixture.
+let ready = false;
+for (let attempt = 0; attempt < 30; attempt++) {
+  try {
+    const response = await fetch(`${config.url}/auth/v1/health`, {
+      headers: { apikey: config.publicKey },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (response.ok) {
+      ready = true;
+      break;
+    }
+  } catch {
+    /* The local stack may still be reconnecting after reset. */
+  }
+  await new Promise((resolve) => setTimeout(resolve, 1000));
+}
+if (!ready)
+  throw new Error("Local Auth gateway is not healthy after database reset.");
 const server = transientClient(config.url, config.serverKey);
 const db = new pg.Client({ connectionString: config.databaseUrl });
 await db.connect();
