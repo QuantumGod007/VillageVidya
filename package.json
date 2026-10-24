@@ -21,7 +21,8 @@
     "db:types:check": "node scripts/db/generate-types.mjs --check",
     "auth:start": "supabase start --network-id village-vidya-local",
     "auth:provision": "node scripts/auth/provision.mjs",
-    "auth:test": "node scripts/auth/test.mjs"
+    "auth:test": "node scripts/auth/test.mjs",
+    "auth:configure": "node scripts/auth/configure-client.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.8",
