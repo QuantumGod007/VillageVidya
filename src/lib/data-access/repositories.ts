@@ -133,73 +133,147 @@ export interface LearnerRepository {
   attempts(): Promise<Tables<"assessment_attempts">[]>;
   bookmarks(): Promise<Tables<"learner_bookmarks">[]>;
   setBookmark(lessonId: string, saved: boolean): Promise<void>;
+  enrollments(): Promise<Tables<"learner_academic_enrollments">[]>;
+  activity(): Promise<Tables<"learner_lesson_activity">[]>;
+  recordReading(lessonId: string, read: boolean): Promise<void>;
   enroll(subjectId: string, language: Language): Promise<void>;
 }
 export function supabaseLearnerRepository(
   client: SupabaseClient<Database>,
 ): LearnerRepository {
   async function identity() {
-    // Server-validated auth, not a demo role or a localStorage user ID.
-    const result = await client.auth.getUser();
+    const session = await client.auth.getSession();
+    if (session.error || !session.data.session)
+      throw new Error("A verified signed-in identity is required.");
+    const token = session.data.session.access_token;
+    const result = await client.auth.getUser(token);
     if (result.error || !result.data.user)
       throw new Error("A verified signed-in identity is required.");
-    return result.data.user.id;
+    const id = result.data.user.id;
+    const header = `Bearer ${token}`;
+    // Pin each request to the verified session. A sign-in on this shared client
+    // while a request is pending must not apply the old account's intent to it.
+    const learner = await client
+      .from("learner_profiles")
+      .select("user_id")
+      .eq("user_id", id)
+      .setHeader("Authorization", header)
+      .single();
+    if (learner.error || !learner.data)
+      throw new Error(
+        "Learner access is unavailable or your session ended. Sign in again.",
+      );
+    return { id, header };
   }
   return {
     async progress() {
+      const owner = await identity();
       return unwrap(
         await client
           .from("lesson_progress")
           .select("*")
-          .eq("learner_id", await identity()),
+          .eq("learner_id", owner.id)
+          .setHeader("Authorization", owner.header),
         "read progress",
       );
     },
     async attempts() {
+      const owner = await identity();
       return unwrap(
         await client
           .from("assessment_attempts")
           .select("*")
-          .eq("learner_id", await identity())
-          .order("created_at", { ascending: false }),
+          .eq("learner_id", owner.id)
+          .order("created_at", { ascending: false })
+          .setHeader("Authorization", owner.header),
         "read attempts",
       );
     },
     async bookmarks() {
+      const owner = await identity();
       return unwrap(
         await client
           .from("learner_bookmarks")
           .select("*")
-          .eq("learner_id", await identity()),
+          .eq("learner_id", owner.id)
+          .setHeader("Authorization", owner.header),
         "read bookmarks",
       );
     },
     async setBookmark(lessonId, saved) {
-      const learner_id = await identity();
-      const result = saved
-        ? await client
+      const owner = await identity();
+      const query = saved
+        ? client
             .from("learner_bookmarks")
             .upsert(
-              { learner_id, lesson_id: lessonId },
+              { learner_id: owner.id, lesson_id: lessonId },
               { onConflict: "learner_id,lesson_id", ignoreDuplicates: true },
             )
-        : await client
+        : client
             .from("learner_bookmarks")
             .delete()
-            .eq("learner_id", learner_id)
+            .eq("learner_id", owner.id)
             .eq("lesson_id", lessonId);
+      const result = await query.setHeader("Authorization", owner.header);
       if (result.error) throw new Error("Could not change this bookmark.");
+      const still = await identity();
+      if (still.id !== owner.id)
+        throw new Error("Your account changed. Refresh your workspace.");
+      const confirmed = await client
+        .from("learner_bookmarks")
+        .select("lesson_id")
+        .eq("learner_id", owner.id)
+        .eq("lesson_id", lessonId)
+        .setHeader("Authorization", owner.header)
+        .maybeSingle();
+      if (confirmed.error || !!confirmed.data !== saved)
+        throw new Error(
+          "Bookmark state changed or could not be confirmed. Refresh and retry.",
+        );
     },
-    async enroll(subject_id, language) {
-      const learner_id = await identity();
-      const result = await client.from("learner_academic_enrollments").upsert(
-        { learner_id, subject_id, language },
-        {
-          onConflict: "learner_id,subject_id,language",
-          ignoreDuplicates: true,
-        },
+    async enrollments() {
+      const owner = await identity();
+      return unwrap(
+        await client
+          .from("learner_academic_enrollments")
+          .select("*")
+          .eq("learner_id", owner.id)
+          .order("created_at")
+          .setHeader("Authorization", owner.header),
+        "read enrolments",
       );
-      if (result.error) throw new Error("Could not record this enrollment.");
+    },
+    async activity() {
+      const owner = await identity();
+      return unwrap(
+        await client
+          .from("learner_lesson_activity")
+          .select("*")
+          .eq("learner_id", owner.id)
+          .order("started_at", { ascending: false })
+          .setHeader("Authorization", owner.header),
+        "read reading activity",
+      );
+    },
+    async recordReading(p_lesson_id, p_mark_read) {
+      const owner = await identity();
+      const result = await client
+        .rpc("record_learner_reading", { p_lesson_id, p_mark_read })
+        .setHeader("Authorization", owner.header);
+      if (result.error || !result.data)
+        throw new Error(
+          "Could not record reading activity. Check your connection and learner access, then retry.",
+        );
+    },
+    async enroll(p_subject_id, p_language) {
+      const owner = await identity();
+      const result = await client
+        .rpc("switch_learner_enrollment", { p_subject_id, p_language })
+        .setHeader("Authorization", owner.header);
+      if (result.error || !result.data)
+        throw new Error(
+          "Could not switch your academic selection. Refresh the catalog or sign in again, then retry.",
+        );
     },
   };
 }
