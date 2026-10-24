@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID, randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
+import { build } from "vite";
 import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
 import { localConfig, transientClient } from "./local.mjs";
@@ -18,6 +19,18 @@ const compiled = ts.transpileModule(
 ).outputText;
 const { verifiedAccount } = await import(
   `data:text/javascript;base64,${Buffer.from(compiled).toString("base64")}`
+);
+const bundle = await build({
+  configFile: false,
+  logLevel: "silent",
+  build: {
+    write: false,
+    minify: false,
+    lib: { entry: "scripts/auth/learner-entry.ts", formats: ["es"] },
+  },
+});
+const { supabaseLearnerRepository } = await import(
+  `data:text/javascript;base64,${Buffer.from((Array.isArray(bundle) ? bundle[0] : bundle).output[0].code).toString("base64")}`
 );
 const config = localConfig();
 // Database resets can briefly leave the gateway's Auth upstream reconnecting.
@@ -197,6 +210,110 @@ try {
       ?.length === 0,
     "unapproved guardian cannot access learner",
   );
+  const learnerRepo = supabaseLearnerRepository(learner);
+  await learnerRepo.enroll("cbse-8-mathematics", "English");
+  check(
+    (await learnerRepo.enrollments()).filter((e) => e.is_active).length === 1,
+    "academic selection persisted through real repository",
+  );
+  const concurrent = await Promise.all([
+    learner.rpc("switch_learner_enrollment", {
+      p_subject_id: "cbse-6-mathematics",
+      p_language: "English",
+    }),
+    learner.rpc("switch_learner_enrollment", {
+      p_subject_id: "cbse-8-mathematics",
+      p_language: "English",
+    }),
+  ]);
+  check(
+    concurrent.every((r) => !r.error) &&
+      (await learnerRepo.enrollments()).filter((e) => e.is_active).length === 1,
+    "concurrent enrolment switches serialize with one active context",
+  );
+  check(
+    !!(
+      await learner.rpc("switch_learner_enrollment", {
+        p_subject_id: "missing",
+        p_language: "English",
+      })
+    ).error,
+    "invalid published context rejected by API",
+  );
+  await learnerRepo.setBookmark("equations", true);
+  await learnerRepo.setBookmark("equations", true);
+  check(
+    (await learnerRepo.bookmarks()).length === 1,
+    "bookmark save is persistent and idempotent",
+  );
+  await learnerRepo.recordReading("equations", false);
+  check(
+    (await learnerRepo.activity())[0].read_at === null,
+    "opening records started without completion",
+  );
+  await Promise.all([
+    learnerRepo.recordReading("equations", true),
+    learnerRepo.recordReading("equations", true),
+  ]);
+  check(
+    (await learnerRepo.activity()).length === 1 &&
+      !!(await learnerRepo.activity())[0].read_at,
+    "reading completion is persistent and idempotent",
+  );
+  check(
+    (await learnerRepo.progress()).length === 0 &&
+      (await learnerRepo.attempts()).length === 0,
+    "reading never creates checkpoint or assessment scores",
+  );
+  const otherRepo = supabaseLearnerRepository(signed[5].client);
+  check(
+    (await otherRepo.activity()).length === 0 &&
+      (await otherRepo.bookmarks()).length === 0,
+    "other learner has no access to first learner records",
+  );
+  check(
+    !!(
+      await signed[5].client
+        .from("learner_lesson_activity")
+        .insert({ learner_id: ids[0], lesson_id: "equations" })
+    ).error,
+    "forged activity ownership rejected",
+  );
+  check(
+    !!(
+      await learner
+        .from("lesson_progress")
+        .insert({
+          learner_id: ids[0],
+          lesson_id: "equations",
+          checkpoint_percent: 100,
+        })
+    ).error,
+    "reading client still cannot submit trusted mastery",
+  );
+  check(
+    !!(
+      await learner
+        .from("assessment_attempts")
+        .insert({
+          learner_id: ids[0],
+          lesson_id: "equations",
+          assessment_id: "equations-checkpoint",
+          selected_option: 0,
+          score_percent: 100,
+        })
+    ).error,
+    "reading client still cannot submit assessment scores",
+  );
+  check(
+    !!(await invalid.from("learner_lesson_activity").select("*")).error,
+    "anonymous reading access denied",
+  );
+  await assert.rejects(() =>
+    supabaseLearnerRepository(tutor).recordReading("equations", true),
+  );
+  assertions++;
+  console.log("PASS non-learner repository cannot record reading");
   const restored = transientClient(config.url, config.publicKey);
   clients.push(restored);
   check(
@@ -208,6 +325,26 @@ try {
     ).error && (await verifiedAccount(restored)).id === ids[0],
     "genuine session restoration",
   );
+  const secondRepo = supabaseLearnerRepository(restored);
+  check(
+    (await secondRepo.enrollments()).some((e) => e.is_active) &&
+      (await secondRepo.bookmarks()).length === 1 &&
+      !!(await secondRepo.activity())[0].read_at,
+    "second authenticated client restores enrolment, bookmark and reading",
+  );
+  await secondRepo.enroll("cbse-6-mathematics", "English");
+  check(
+    (await secondRepo.bookmarks()).length === 1 &&
+      (await secondRepo.activity()).length === 1,
+    "context changes preserve earlier reading and saved records",
+  );
+  await secondRepo.setBookmark("equations", false);
+  await secondRepo.setBookmark("equations", false);
+  check(
+    (await secondRepo.bookmarks()).length === 0,
+    "unsave persists and repeated removal is idempotent",
+  );
+  await secondRepo.setBookmark("equations", true);
   const refreshed = await restored.auth.refreshSession();
   check(
     !refreshed.error && !!refreshed.data.session,
@@ -233,6 +370,20 @@ try {
   check(
     (await restored.from("profiles").select("*")).data?.length === 0,
     "expired server session denied despite unexpired JWT",
+  );
+  check(
+    (await restored.from("learner_lesson_activity").select("*")).data
+      ?.length === 0,
+    "expired session loses new private activity reads",
+  );
+  check(
+    !!(
+      await restored.rpc("record_learner_reading", {
+        p_lesson_id: "water",
+        p_mark_read: true,
+      })
+    ).error,
+    "expired session cannot write reading activity",
   );
   check(
     !!(await restored.auth.refreshSession()).error,
@@ -268,6 +419,27 @@ try {
       })
     ).error,
     "signed-out refresh token revoked",
+  );
+  const relogged = await login(accounts[0]);
+  const reloggedRepo = supabaseLearnerRepository(relogged.client);
+  check(
+    (await reloggedRepo.enrollments()).some((e) => e.is_active) &&
+      (await reloggedRepo.bookmarks()).length === 1 &&
+      !!(await reloggedRepo.activity())[0].read_at,
+    "new sign-in retrieves persistent learning records",
+  );
+  const revokedActivity = await fetch(
+    `${config.url}/rest/v1/learner_lesson_activity?select=*`,
+    {
+      headers: {
+        apikey: config.publicKey,
+        Authorization: `Bearer ${revokeToken}`,
+      },
+    },
+  );
+  check(
+    revokedActivity.ok && (await revokedActivity.json()).length === 0,
+    "signed-out token cannot replay reading history",
   );
   await db.query(
     "update public.adult_test_accounts set enabled=false where user_id=$1",
