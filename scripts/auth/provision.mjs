@@ -37,7 +37,7 @@ export async function provisionAdult(config, account) {
   });
   if (error || !data.user)
     throw new Error(
-      "Local Auth account creation failed; check account details or duplicate email.",
+      `Local Auth account creation failed (code: ${error?.code ?? "unknown"}, status: ${error?.status ?? "unknown"}). Check account details or duplicate email.`,
     );
   const id = data.user.id;
   const db = new pg.Client({ connectionString: config.databaseUrl });
