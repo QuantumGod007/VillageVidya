@@ -57,3 +57,7 @@ Baseline: supplied `202401100138_SAD_A1.pdf`, 25 physical pages, read in full. T
 ## Phase 4 academic refinement
 
 CURR-1/2 now have a typed Board → Grade → Subject → Chapter → Lesson → Assessment local catalog, explicit edition-specific reference metadata and coverage gaps. Learner Grades 4–10 and all four context dimensions constrain discovery and recommendations. PROG-1 counts/checkpoints are scoped consistently without discarding legacy records. DOUBT-1’s curated explanations use that same context; this does not satisfy live grounded retrieval. MATCH-1 retains tutor academic eligibility and snapshots requested learner context through cascade/rooms. Official ingestion, semantic/vector retrieval, translations and persistence remain deferred. See [PHASE-4.md](PHASE-4.md) for grade-wise coverage, source verification and the four-state inventory.
+
+## Phase 5 persistence and authorization foundation
+
+AUTH/CURR/PROG/PARENT/CHAMP now have normalized Supabase Auth UUID relationships, stable academic IDs, explicit grants, RLS, source provenance and append-only trust/attempt histories. Real PostgreSQL tests use anon/authenticated/service-role contexts, including denial checks. Native tests use a minimal auth-schema fixture; CI runs the same suites on Supabase's real local database/auth schema. The fictional UI is unchanged. Registration, authenticated UI persistence, verified physical evidence, trusted scoring/consent services, messaging and cross-device migration remain unimplemented. See [DATABASE.md](DATABASE.md).

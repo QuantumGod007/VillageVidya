@@ -10,7 +10,15 @@
     "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:start": "supabase db start --network-id village-vidya-local",
+    "db:reset": "supabase db reset --local",
+    "db:test": "node scripts/db/test.mjs",
+    "db:test:native": "node scripts/db/test.mjs --native",
+    "db:seed:generate": "node scripts/generate-curriculum-seed.mjs",
+    "db:seed:check": "node scripts/generate-curriculum-seed.mjs --check",
+    "db:types": "node scripts/db/generate-types.mjs",
+    "db:types:check": "node scripts/db/generate-types.mjs --check"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.8",

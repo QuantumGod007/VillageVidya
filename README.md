@@ -54,7 +54,7 @@ No real OTP, consent, physical verification, automated safety escalation, SMS de
 
 Local regex contact removal catches common phone numbers, email addresses, and web links. It is not full multilingual moderation, address detection, or production child protection. User-entered messages/questions/notes are never written to persistent browser storage.
 
-A production backend is deferred. There is no database migration or live server in this release. Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
+Phase 5 adds a versioned Supabase PostgreSQL/RLS foundation and dormant typed repositories. The current UI remains a fictional demo; environment variables alone do not connect it. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
 
 ## Stack and structure
 

@@ -1,0 +1,25 @@
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000003"}',true);
+select pg_temp.assert_true((select count(*)=1 from public.tutor_profiles), 'tutor sees own private record only');
+select pg_temp.assert_true((select academic_grade=11 from public.tutor_profiles), 'tutor Grade 11 not clamped to learner grade range');
+update public.tutor_profiles set bio='An owned biography';
+select pg_temp.assert_true((select bio='An owned biography' from public.tutor_profiles), 'own safe bio edit allowed');
+select pg_temp.expect_error($q$update public.tutor_profiles set academic_grade=12$q$,'42501','academic grade is trusted');
+select pg_temp.expect_error($q$update public.tutor_profiles set teaching_skill_score=100$q$,'42501','tutor cannot alter own TSS');
+select pg_temp.expect_error($q$insert into public.tutor_verification_records(tutor_id,reviewed_by,status,verified_grade,decision_note) values (auth.uid(),auth.uid(),'approved',12,'forged')$q$,'42501','tutor cannot approve verification');
+select pg_temp.expect_error($q$insert into public.tutor_subject_qualifications(tutor_id,subject_id) values (auth.uid(),'cbse-10-mathematics')$q$,'42501','tutor cannot manufacture subject qualification');
+select pg_temp.expect_error($q$insert into public.tutor_languages(tutor_id,language) values (auth.uid(),'हिन्दी')$q$,'42501','language qualifications require trusted write');
+insert into public.tutor_availability(tutor_id,weekday,starts_at,ends_at,enabled) values (auth.uid(),2,'10:00','11:00',true);
+select pg_temp.assert_true((select count(*)=2 from public.tutor_availability), 'own availability edit allowed');
+select pg_temp.expect_error($q$insert into public.tutor_availability(tutor_id,weekday,starts_at,ends_at) values ('00000000-0000-0000-0000-000000000008',2,'10:00','11:00')$q$,'42501','cannot set another tutor availability');
+reset role;
+set local role service_role;
+update public.lesson_progress set checkpoint_percent=100 where learner_id='00000000-0000-0000-0000-000000000001';
+select pg_temp.assert_true((select checkpoint_percent=100 from public.lesson_progress where learner_id='00000000-0000-0000-0000-000000000001'), 'trusted scoring write works');
+select pg_temp.expect_error($q$update public.guardian_consent_records set status='approved'$q$,'42501','consent audit remains append-only even to service_role');
+select pg_temp.expect_error($q$delete from public.assessment_attempts$q$,'42501','attempt history cannot be rewritten by service API');
+select pg_temp.expect_error($q$delete from public.guardian_relationships$q$,'23503','cannot erase consent audit by deleting its parent');
+insert into public.tutor_verification_records(tutor_id,status,reviewed_by,verified_grade,decision_note) values
+ ('00000000-0000-0000-0000-000000000003','pending','00000000-0000-0000-0000-000000000005',null,'Fictional pending record.');
+select pg_temp.expect_error($q$update public.tutor_verification_records set status='approved'$q$,'42501','verification audit remains append-only');
+reset role;

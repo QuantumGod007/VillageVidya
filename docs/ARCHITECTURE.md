@@ -18,7 +18,7 @@ Presentation → features → domain rules → demo repository is the dependency
 | AI pipeline | Curated originals, labelled sample evaluation, coverage fallback | 768-dimension curriculum index, retrieval, grounded evaluation, translation |
 | Persistence | Validated fictional preferences in local storage; memory-only transcripts | PostgreSQL, encrypted private records, Redis locks/queues, Qdrant |
 
-This is a pragmatic vertical slice, not an implementation of the SRS microservice cluster. The relational backend remains deferred. No Redis, vector database, queue, gateway, or production auth server is represented as running.
+This is a pragmatic vertical slice, not an implementation of the SRS microservice cluster. A versioned Supabase-compatible PostgreSQL/RLS foundation is included; the UI remains disconnected from it. No Redis, vector database, queue, gateway, or production auth server is represented as running.
 
 ## Rules that are active locally
 
@@ -53,7 +53,7 @@ The worker is enabled only in production, on HTTPS or localhost. A first success
 
 ## Future backend boundary
 
-No migration is included or applied. A future audited server must own writes to scores, consent, verification, match assignment and moderated messages. Its authorization policies must limit private reads to owners/participants and authorized governance roles. Frontend demo route gates cannot substitute for those policies.
+Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and typed repositories. Scores, roles, consent, verification and curriculum writes remain trusted-service operations. The current UI still uses the fictional adapter; frontend demo route gates cannot substitute for database policies. See [DATABASE.md](DATABASE.md) for setup, the access matrix and production gates.
 
 ## Workspace route boundary (Phase 2)
 
