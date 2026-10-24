@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { randomUUID, randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
+import { createClient } from "@supabase/supabase-js";
 import pg from "pg";
 import { localConfig, transientClient } from "./local.mjs";
 import { provisionAdult } from "./provision.mjs";
@@ -86,21 +87,21 @@ try {
   const invalid = transientClient(config.url, config.publicKey);
   clients.push(invalid);
   check(
-    !!(
+    (
       await invalid.auth.signInWithPassword({
         email: accounts[0].email,
         password: "wrong-password",
       })
-    ).error,
+    ).error?.code === "invalid_credentials",
     "invalid credentials rejected",
   );
   check(
-    !!(
+    (
       await invalid.auth.signUp({
         email: `closed-${suffix}@example.invalid`,
         password,
       })
-    ).error,
+    ).error?.code === "signup_disabled",
     "public signup remains closed",
   );
   const signed = [];
@@ -275,23 +276,60 @@ try {
   await assert.rejects(() => verifiedAccount(tutor));
   assertions++;
   console.log("PASS disabled adult access fails closed");
-  // Recovery uses GoTrue's real generated recovery token. Local SMTP delivery
-  // itself is not asserted; this verifies token exchange and password update.
-  const recovery = await server.auth.admin.generateLink({
-    type: "recovery",
-    email: accounts[3].email,
+  // Test the same PKCE recovery flow as the browser, through the real local
+  // SMTP capture. No recovery link or credential is printed or sent externally.
+  const recovering = createClient(config.url, config.publicKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      flowType: "pkce",
+    },
   });
-  assert.ifError(recovery.error);
-  const recovering = transientClient(config.url, config.publicKey);
   clients.push(recovering);
-  check(
-    !(
-      await recovering.auth.verifyOtp({
-        token_hash: recovery.data.properties.hashed_token,
-        type: "recovery",
+  const reset = await recovering.auth.resetPasswordForEmail(accounts[3].email, {
+    redirectTo: "http://127.0.0.1:5173/account/recovery",
+  });
+  check(!reset.error, "real password recovery email requested");
+  let messageId;
+  for (let attempt = 0; attempt < 15; attempt++) {
+    const messages = await (
+      await fetch("http://127.0.0.1:54324/api/v1/messages", {
+        signal: AbortSignal.timeout(3000),
       })
-    ).error,
-    "real recovery token accepted",
+    ).json();
+    messageId = messages.messages?.find((m) =>
+      m.To?.some((to) => to.Address === accounts[3].email),
+    )?.ID;
+    if (messageId) break;
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  check(!!messageId, "recovery email captured by local SMTP");
+  const mail = await (
+    await fetch(`http://127.0.0.1:54324/api/v1/message/${messageId}`)
+  ).json();
+  const links = [...mail.HTML.matchAll(/href=["']([^"']+)["']/g)].map((m) =>
+    m[1].replaceAll("&amp;", "&"),
+  );
+  const verification = links.find((link) => {
+    const u = new URL(link);
+    return u.origin === config.url && u.pathname === "/auth/v1/verify";
+  });
+  check(!!verification, "recovery link targets the local Auth server");
+  const redirect = await fetch(verification, { redirect: "manual" });
+  const location = new URL(redirect.headers.get("location"));
+  check(
+    location.origin === "http://127.0.0.1:5173" &&
+      location.pathname === "/account/recovery" &&
+      !!location.searchParams.get("code"),
+    "recovery redirects to the allowed account screen with a PKCE code",
+  );
+  const exchange = await recovering.auth.exchangeCodeForSession(
+    location.searchParams.get("code"),
+  );
+  check(
+    !exchange.error && !!exchange.data.session,
+    "real PKCE recovery code exchanged for a session",
   );
   const newPassword = randomBytes(24).toString("base64url");
   check(
