@@ -11384,3 +11384,107 @@ textarea:focus {
 .account-workspace p {
   overflow-wrap: anywhere;
 }
+
+.learner-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 22px;
+  border-block: 1px solid #e8e7e3;
+  margin: 0 0 26px;
+  padding: 12px 0;
+  font-size: 13px;
+}
+.learner-toolbar > a {
+  color: #315cfd;
+  padding: 8px 0;
+}
+.learner-toolbar > .button {
+  margin-left: auto;
+}
+.learner-selection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin: 24px 0;
+  max-width: 760px;
+}
+.learner-selection-note {
+  grid-column: 1/-1;
+}
+.learner-selection > .button {
+  justify-self: start;
+}
+.learner-resource-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.learner-resource-list > li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 22px 0;
+  border-bottom: 1px solid #e8e7e3;
+}
+.learner-resource-list > li > div {
+  min-width: 0;
+}
+.learner-resource-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 17px;
+  font-weight: 500;
+  margin: 7px 0 9px;
+}
+.learner-resource-title:hover {
+  color: #315cfd;
+}
+.learner-resource-list .button {
+  flex-shrink: 0;
+  font-size: 12px;
+}
+.learner-section-heading {
+  font-size: 20px;
+  margin: 22px 0 14px;
+}
+.learner-lesson-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .learner-selection {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .learner-toolbar > .button {
+    margin-left: 0;
+  }
+  .learner-resource-list > li {
+    align-items: flex-start;
+    gap: 7px;
+  }
+  .learner-resource-title {
+    font-size: 15px;
+  }
+  .learner-resource-list .button {
+    min-width: 44px;
+    padding-inline: 8px;
+  }
+}
+
+.learner-workspace .account-resource ol {
+  list-style: decimal;
+  padding-left: 22px;
+  margin: 22px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.learner-workspace .account-resource li {
+  padding-left: 5px;
+  margin-block: 10px;
+}

@@ -1,4 +1,4 @@
-select pg_temp.assert_true((select count(*)=22 and bool_and(relrowsecurity and relforcerowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and relkind='r'), 'all 22 application tables enforce RLS');
+select pg_temp.assert_true((select count(*)=23 and bool_and(relrowsecurity and relforcerowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and relkind='r'), 'all 23 application tables enforce RLS');
 select pg_temp.assert_true((select count(*)=8 from public.lessons where language='English' and content_origin='original_practice'), 'eight original English lessons');
 select pg_temp.assert_true((select count(*)=8 from public.assessments), 'one checkpoint per original lesson');
 select pg_temp.assert_true((select count(*)=14 from public.academic_grades), 'both boards support Grades 4–10');
@@ -20,3 +20,5 @@ select pg_temp.expect_error($q$insert into public.tutor_profiles(user_id,academi
 select pg_temp.assert_true((select max(academic_grade)=12 from public.tutor_profiles), 'tutor Grades 11 and 12 remain supported');
 select pg_temp.expect_error($q$insert into public.tutor_availability(tutor_id,weekday,starts_at,ends_at) values ('00000000-0000-0000-0000-000000000003',9,'18:00','17:00')$q$,'23514','availability bounds');
 select pg_temp.expect_error($q$insert into public.tutor_verification_records(tutor_id,status,reviewed_by,verified_grade,decision_note) values ('00000000-0000-0000-0000-000000000003','approved','00000000-0000-0000-0000-000000000003',11,'self approval')$q$,'23514','even trusted writes cannot record self-verification');
+
+select pg_temp.expect_error($q$insert into public.learner_academic_enrollments(learner_id,subject_id,language,is_active) values ('00000000-0000-0000-0000-000000000001','cbse-8-mathematics','English',true),('00000000-0000-0000-0000-000000000001','cbse-6-mathematics','English',true)$q$,'23505','unique index still forbids two active enrollments');

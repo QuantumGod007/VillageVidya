@@ -87,10 +87,26 @@ function mockClient(data: Record<string, unknown> = rows(), failure?: string) {
         JSON.stringify({ code: "42501", message: "denied" }),
         { status: 403, headers: { "Content-Type": "application/json" } },
       );
-    if (request.method === "GET")
-      return new Response(JSON.stringify(data[table] ?? []), {
+    if (table === "learner_bookmarks" && request.method !== "GET")
+      data.learner_bookmarks =
+        request.method === "POST" ? { lesson_id: "equations" } : null;
+    if (table === "switch_learner_enrollment")
+      return new Response(JSON.stringify({ id: "enrolment" }), {
         headers: { "Content-Type": "application/json" },
       });
+    if (request.method === "GET")
+      return new Response(
+        JSON.stringify(
+          table === "learner_profiles"
+            ? { user_id: id }
+            : table === "learner_bookmarks"
+              ? (data[table] ?? null)
+              : (data[table] ?? []),
+        ),
+        {
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     return new Response(null, { status: 204 });
   };
   const client = createClient<Database>(
@@ -115,6 +131,18 @@ function signedIn(client: ReturnType<typeof mockClient>["client"]) {
     app_metadata: {},
     user_metadata: {},
   };
+  vi.spyOn(client.auth, "getSession").mockResolvedValue({
+    data: {
+      session: {
+        access_token: "verified-fixture-token",
+        refresh_token: "fixture-refresh",
+        expires_in: 900,
+        token_type: "bearer",
+        user,
+      },
+    },
+    error: null,
+  });
   vi.spyOn(client.auth, "getUser").mockResolvedValue({
     data: { user },
     error: null,
@@ -227,15 +255,24 @@ describe("typed Supabase repository behavior (HTTP unit fixtures, not RLS proof)
     await repository.setBookmark("equations", true);
     await repository.setBookmark("equations", false);
     await repository.enroll("cbse-8-mathematics", "English");
-    expect(calls[0].url.searchParams.get("learner_id")).toBe(`eq.${id}`);
-    expect(calls[1].body).toEqual({ learner_id: id, lesson_id: "equations" });
-    expect(calls[1].prefer).toContain("resolution=ignore-duplicates");
-    expect(calls[2].url.searchParams.get("learner_id")).toBe(`eq.${id}`);
-    expect(calls[2].url.searchParams.get("lesson_id")).toBe("eq.equations");
-    expect(calls[3].body).toEqual({
+    const operations = calls.filter(
+      (c) =>
+        !c.url.pathname.endsWith("learner_profiles") &&
+        !(c.method === "GET" && c.url.pathname.endsWith("learner_bookmarks")),
+    );
+    expect(operations[0].url.searchParams.get("learner_id")).toBe(`eq.${id}`);
+    expect(operations[1].body).toEqual({
       learner_id: id,
-      subject_id: "cbse-8-mathematics",
-      language: "English",
+      lesson_id: "equations",
+    });
+    expect(operations[1].prefer).toContain("resolution=ignore-duplicates");
+    expect(operations[2].url.searchParams.get("learner_id")).toBe(`eq.${id}`);
+    expect(operations[2].url.searchParams.get("lesson_id")).toBe(
+      "eq.equations",
+    );
+    expect(operations[3].body).toEqual({
+      p_subject_id: "cbse-8-mathematics",
+      p_language: "English",
     });
   });
   it("does not turn denied writes into a simulated success", async () => {
