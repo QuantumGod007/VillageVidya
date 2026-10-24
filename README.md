@@ -24,7 +24,7 @@ No environment variables, API keys, or paid services are required. Real service 
 
 ## Try a connected journey
 
-1. Choose **Get started**, the fictional **Learner** role, grade, language, and subject. Acknowledge that the profile is fictional.
+1. Choose **Get started** and the fictional **Learner** role. Select **CBSE**, **Grade 6**, **English**, and **Mathematics** for this fractions journey. Acknowledge that the profile is fictional.
 2. Continue **Fractions, made familiar**. Answer its checkpoint; correct answers update actual local mastery. Bookmark the lesson and find it in Saved lessons.
 3. Open **Find tutors**. Change language/grade/availability filters and inspect **Why this match makes sense**.
 4. Request a demo session. Explicitly simulate acceptance, decline, or timeout. Declines cascade to another eligible available peer; unanswered invitations expire after 45 seconds, with an overall 90-second limit.
@@ -41,7 +41,7 @@ Leaving the demo signs out and discards visit-only session records. Reloading di
 - Tutor eligibility and CMS calculation: `0.35 × Subject + 0.30 × Language + 0.20 × TSS_normalized + 0.15 × Availability`.
 - Match requests, acceptance/decline/expiration, fallback, illustrative IST scheduling, and cancellation.
 - Memory-only practice conversation, millisecond ELIC events, local contact redaction, three-minute reconnection exercise, ratings, and summary.
-- Six authored reading notes, scored checkpoints, topic mastery, saved reading, and a rule-based next learning step.
+- Eight authored reading notes with scored checkpoints, saved reading, and progress/recommendations filtered by board, learner grade (4–10), subject, and language. See [grade-wise catalog coverage](docs/PHASE-4.md#catalog-coverage) for available samples and gaps.
 - Curated Doubt Assistant explanations with explicit source provenance and a peer-help fallback for uncovered questions.
 - Sample Co-Teacher dimensions with **calculated** weighted score and TSS EMA; tutor availability, a practice goal, session history, and ladder rules.
 - Guardian digest formatting, Champion training review state, original community cards, and a downloadable local demo report.
