@@ -31,7 +31,9 @@ enable_signup = false
 enable_anonymous_sign_ins = false
 
 [auth.email]
-enable_signup = false
+# This also enables the email sign-in provider. Global auth.enable_signup=false
+# above still rejects every public signup; only trusted adult provisioning exists.
+enable_signup = true
 enable_confirmations = true
 
 [auth.sms]
