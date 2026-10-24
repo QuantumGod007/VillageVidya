@@ -50,6 +50,12 @@ jobs:
         run: npm run db:reset && npm run db:test
       - run: npm run db:types:check
       - run: npm run auth:test
+      - name: Local gateway diagnostics on failure
+        if: failure()
+        run: |
+          docker ps -a --format '{{.Names}}: {{.Status}}'
+          docker logs supabase_kong_village-vidya --tail 20
+          docker logs supabase_auth_village-vidya --tail 20
       - name: Stop isolated local database
         if: always()
         run: npx supabase stop --no-backup
