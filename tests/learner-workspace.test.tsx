@@ -275,4 +275,43 @@ describe("persistent learner UI (mocked repositories; real RLS/API tests run in 
     await act(async () => resolve(curriculum));
     expect(result.current.data?.enrollments).toHaveLength(0);
   });
+  it("locks context controls during a pending atomic switch", async () => {
+    const user = userEvent.setup();
+    const f = fixture();
+    let finish!: () => void;
+    const wait = new Promise<void>((r) => (finish = r));
+    const original = vi
+      .mocked(f.access.learner.enroll)
+      .getMockImplementation()!;
+    vi.mocked(f.access.learner.enroll).mockImplementationOnce(
+      async (...args) => {
+        await wait;
+        await original(...args);
+      },
+    );
+    openAccount(f.access, "/settings");
+    await user.selectOptions(
+      await screen.findByLabelText("Learner grade"),
+      "6",
+    );
+    await user.selectOptions(
+      screen.getByLabelText("Subject"),
+      "cbse-6-mathematics",
+    );
+    await user.click(
+      screen.getByRole("button", { name: "Save academic selection" }),
+    );
+    expect(screen.getByLabelText("Subject")).toBeDisabled();
+    expect(screen.getByLabelText("Learner grade")).toBeDisabled();
+    expect(f.state.enrollments.find((e) => e.is_active)?.subject_id).toBe(
+      "cbse-8-mathematics",
+    );
+    await act(async () => finish());
+    expect(
+      await screen.findByText("Academic selection saved to your account."),
+    ).toBeInTheDocument();
+    expect(f.state.enrollments.find((e) => e.is_active)?.subject_id).toBe(
+      "cbse-6-mathematics",
+    );
+  });
 });

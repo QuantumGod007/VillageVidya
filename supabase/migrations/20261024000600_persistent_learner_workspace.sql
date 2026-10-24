@@ -80,7 +80,10 @@ declare caller uuid := private.require_live_learner(); result public.learner_les
   insert into public.learner_lesson_activity(learner_id,lesson_id,read_at)
     values(caller,p_lesson_id,case when p_mark_read then now() else null end)
     on conflict(learner_id,lesson_id) do update set
-      read_at=coalesce(learner_lesson_activity.read_at,excluded.read_at)
+      -- A transaction that started earlier can wait behind a later insert.
+      -- Keep completion at least as recent as the winning start timestamp.
+      read_at=coalesce(learner_lesson_activity.read_at,case when excluded.read_at is not null
+        then greatest(learner_lesson_activity.started_at,excluded.read_at) end)
     returning * into result;
   return result;
 end $$;

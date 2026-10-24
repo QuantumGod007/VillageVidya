@@ -338,7 +338,9 @@ export function LearnerContent({
         <h1>{title}</h1>
         <div className="role-context">
           <span>{contextLabel}</span>
-          {context && <Link to="/settings">Change preferences</Link>}
+          {context && pathname !== "/settings" && (
+            <Link to="/settings">Change preferences</Link>
+          )}
         </div>
       </header>
       {ws.error && (

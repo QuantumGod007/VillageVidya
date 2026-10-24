@@ -281,27 +281,23 @@ try {
   );
   check(
     !!(
-      await learner
-        .from("lesson_progress")
-        .insert({
-          learner_id: ids[0],
-          lesson_id: "equations",
-          checkpoint_percent: 100,
-        })
+      await learner.from("lesson_progress").insert({
+        learner_id: ids[0],
+        lesson_id: "equations",
+        checkpoint_percent: 100,
+      })
     ).error,
     "reading client still cannot submit trusted mastery",
   );
   check(
     !!(
-      await learner
-        .from("assessment_attempts")
-        .insert({
-          learner_id: ids[0],
-          lesson_id: "equations",
-          assessment_id: "equations-checkpoint",
-          selected_option: 0,
-          score_percent: 100,
-        })
+      await learner.from("assessment_attempts").insert({
+        learner_id: ids[0],
+        lesson_id: "equations",
+        assessment_id: "equations-checkpoint",
+        selected_option: 0,
+        score_percent: 100,
+      })
     ).error,
     "reading client still cannot submit assessment scores",
   );
@@ -427,6 +423,16 @@ try {
       (await reloggedRepo.bookmarks()).length === 1 &&
       !!(await reloggedRepo.activity())[0].read_at,
     "new sign-in retrieves persistent learning records",
+  );
+  await Promise.all([
+    otherRepo.recordReading("water", false),
+    otherRepo.recordReading("water", true),
+  ]);
+  check(
+    (await otherRepo.activity()).filter(
+      (a) => a.lesson_id === "water" && a.read_at,
+    ).length === 1,
+    "concurrent first-start and read actions retain one completed reading record",
   );
   const revokedActivity = await fetch(
     `${config.url}/rest/v1/learner_lesson_activity?select=*`,

@@ -20,6 +20,14 @@ select pg_temp.expect_error($q$insert into public.learner_lesson_activity(learne
 select pg_temp.expect_error($q$update public.learner_lesson_activity set read_at=now()$q$,'42501','direct reading writes denied');
 select pg_temp.expect_error($q$select public.record_learner_reading('missing',true)$q$,'22023','missing resource denied');
 reset role;
+-- Model the start timestamp committed by the transaction that won an insert
+-- race, while this recording transaction's now() snapshot is older.
+insert into public.learner_lesson_activity(learner_id,lesson_id,started_at) values
+ ('00000000-0000-0000-0000-000000000001','water',now()+interval '1 second');
+set local role authenticated;
+select public.record_learner_reading('water',true);
+select pg_temp.assert_true((select read_at>=started_at from public.learner_lesson_activity where lesson_id='water'),'older transaction completion stays monotonic after an insert race');
+reset role;
 update public.academic_grades set is_published=false where id='cbse-8';
 set local role authenticated;
 select pg_temp.expect_error($q$select public.record_learner_reading('equations',true)$q$,'22023','unpublished ancestor blocks reading');

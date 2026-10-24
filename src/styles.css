@@ -11476,3 +11476,15 @@ textarea:focus {
     padding-inline: 8px;
   }
 }
+
+.learner-workspace .account-resource ol {
+  list-style: decimal;
+  padding-left: 22px;
+  margin: 22px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.learner-workspace .account-resource li {
+  padding-left: 5px;
+  margin-block: 10px;
+}
