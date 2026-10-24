@@ -20,7 +20,7 @@ npm run build
 npm run preview
 ```
 
-No environment variables, API keys, or paid services are required. Real service integrations are deliberately unavailable, rather than activated by a client-side flag. Never place service-role or AI keys in `VITE_*` variables.
+No environment variables, API keys, or paid services are required for the fictional demo. For real Supabase sign-in with a provisioned adult test account, follow [local authentication setup](docs/DATABASE.md#local-supabase). Never place service-role or AI keys in `VITE_*` variables.
 
 ## Try a connected journey
 
@@ -50,11 +50,11 @@ Leaving the demo signs out and discards visit-only session records. Reloading di
 
 ## Honest service boundaries
 
-No real OTP, consent, physical verification, automated safety escalation, SMS delivery, curriculum embeddings, LLM analysis, server-side authentication, live translation, WebSocket chat, WebRTC audio, or encrypted transcript database is connected. All profile verification badges are labelled fictional. No real registration form collects a child’s personal information.
+No real OTP, consent, physical verification, automated safety escalation, SMS delivery, curriculum embeddings, LLM analysis, live translation, WebSocket chat, WebRTC audio, or encrypted transcript database is connected. All profile verification badges are labelled fictional. No real registration form collects a child’s personal information.
 
 Local regex contact removal catches common phone numbers, email addresses, and web links. It is not full multilingual moderation, address detection, or production child protection. User-entered messages/questions/notes are never written to persistent browser storage.
 
-Phase 5 adds a versioned Supabase PostgreSQL/RLS foundation and dormant typed repositories. The current UI remains a fictional demo; environment variables alone do not connect it. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
+The Supabase PostgreSQL/RLS foundation now supports genuine sign-in, session refresh/recovery/sign-out and server-assigned roles for provisioned adult testers. Default demo mode remains separate; private account data requires a live Auth session and trusted test-access grant. Real learner registration and tutoring remain closed. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
 
 ## Stack and structure
 

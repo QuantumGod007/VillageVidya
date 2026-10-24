@@ -53,7 +53,7 @@ The worker is enabled only in production, on HTTPS or localhost. A first success
 
 ## Future backend boundary
 
-Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and typed repositories. Scores, roles, consent, verification and curriculum writes remain trusted-service operations. The current UI still uses the fictional adapter; frontend demo route gates cannot substitute for database policies. See [DATABASE.md](DATABASE.md) for setup, the access matrix and production gates.
+Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and typed repositories. Scores, roles, consent, verification and curriculum writes remain trusted-service operations. Phase 6 adds `AccountProvider` with one authenticated client, server-validated identity and database-assigned roles. Account routes never mount fictional feature components; their repositories cannot import browser progress. Restrictive live-session/adult-test policies intersect existing ownership checks. Default demo mode still uses its original adapter; frontend gates cannot substitute for database policies. See [DATABASE.md](DATABASE.md) for setup, the access matrix and production gates.
 
 ## Workspace route boundary (Phase 2)
 
