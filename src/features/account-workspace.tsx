@@ -10,11 +10,20 @@ const LearnerWorkspace = lazy(() =>
   import("./learner-workspace").then((m) => ({ default: m.LearnerWorkspace })),
 );
 
+const TutorWorkspace = lazy(() =>
+  import("./tutor-workspace").then((m) => ({ default: m.TutorWorkspace })),
+);
+
 // Account pages never mount fictional feature components. They use the shared
 // authenticated repositories and truthful release states until later phases.
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (
+    role === "tutor" &&
+    ["/studio", "/settings", "/studio/feedback"].includes(pathname)
+  )
+    return <TutorWorkspace />;
   return role === "learner" &&
     (["/learn", "/explore", "/learn/progress", "/settings"].includes(
       pathname,
@@ -289,62 +298,6 @@ function OtherAccountWorkspace() {
             "Upcoming sessions",
             "Real matching and sessions remain disabled while child-safety and consent services are completed.",
           )}
-        </>
-      ) : pathname === "/studio" ? (
-        <>
-          <section className="role-request-section" id="requests" tabIndex={-1}>
-            <div className="role-request-heading">
-              <div>
-                <Eyebrow>PRIORITY</Eyebrow>
-                <h2>Tutoring requests</h2>
-              </div>
-            </div>
-            <div className="role-request-empty">
-              <div>
-                <h3>Real tutoring is not open yet.</h3>
-                <p>
-                  No requests or fictional learners are assigned to this
-                  account.
-                </p>
-              </div>
-            </div>
-          </section>
-          <div className="role-overview-columns">
-            <div>
-              {section(
-                "schedule",
-                "Next session",
-                "Scheduling and real availability activation are not enabled.",
-              )}
-              {section(
-                "activity",
-                "Teaching activity",
-                "Session history will appear after real tutoring is available.",
-              )}
-            </div>
-            <div>
-              <section className="role-quiet-section">
-                <Eyebrow>AVAILABILITY</Eyebrow>
-                <h3>Participation closed</h3>
-                <p>{account.tutor?.bio || "No teaching biography saved."}</p>
-              </section>
-              <section className="role-quiet-section" id="growth" tabIndex={-1}>
-                <Eyebrow>TEACHING GROWTH</Eyebrow>
-                <h3>
-                  {account.tutor?.teaching_skill_score === null
-                    ? "No evaluated score"
-                    : `Recorded score: ${account.tutor?.teaching_skill_score ?? "—"}`}
-                </h3>
-                <p>
-                  {account.tutor?.completed_sessions ?? 0} recorded sessions. No
-                  sample Co-Teacher results are used.
-                </p>
-                <Link className="role-text-link" to="/studio/feedback">
-                  Co-Teacher feedback
-                </Link>
-              </section>
-            </div>
-          </div>
         </>
       ) : pathname === "/guardian" ? (
         <>

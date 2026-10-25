@@ -93,6 +93,9 @@ export function supabaseTutorRepository(
         throw new Error(
           "Tutor records could not be loaded completely. Check your connection and access.",
         );
+      const confirmed = await identity();
+      if (confirmed.id !== owner.id)
+        throw new Error("Your account changed. Refresh records.");
       return {
         profile: owner.profile,
         availability: availability.data!,
