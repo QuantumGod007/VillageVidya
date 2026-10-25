@@ -1,8 +1,8 @@
 -- Fictional test identities only, rolled back after each suite. No credentials,
 -- signed-in real users, approved consent or physical verification are seeded.
-insert into auth.users(id,email,aud,role,raw_app_meta_data,raw_user_meta_data)
+insert into auth.users(id,email,aud,role,raw_app_meta_data,raw_user_meta_data,email_confirmed_at)
 select ('00000000-0000-0000-0000-'||lpad(n::text,12,'0'))::uuid,
-  'vv-test-'||n||'@example.invalid','authenticated','authenticated','{}','{}'
+  'vv-test-'||n||'@example.invalid','authenticated','authenticated','{}','{}',now()
 from generate_series(1,8) n;
 insert into public.profiles(id,display_name) select id,'Fictional test '||right(email,18) from auth.users where email like 'vv-test-%@example.invalid';
 insert into public.user_roles(user_id,role) values
