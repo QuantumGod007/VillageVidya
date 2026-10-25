@@ -4,7 +4,7 @@
 
 The React application has two independent workspaces. The default fictional demo uses `StoreProvider`, validated local preferences/progress and in-memory conversations, matching and session simulations. Its role picker is a demo mechanism; sample scores and verification never transfer to real accounts.
 
-When explicitly configured for Supabase, `AccountProvider` shares one public-key client with typed repositories and resolves identity and roles from Auth and PostgreSQL. Only provisioned adult test accounts with live, enabled sessions enter private routes. Phase 7 connects learner enrolment, saved lessons and self-reported reading. Phase 8 connects tutor biographies, private weekly availability, trusted qualifications and ordered verification history. Public registration, real children, matching, bookings and live sessions remain closed.
+When explicitly configured for Supabase, `AccountProvider` shares one public-key client with typed repositories and resolves identity and roles from Auth and PostgreSQL. Only provisioned adult test accounts with live, enabled sessions enter private routes. Phase 7 connects learner enrolment, saved lessons and self-reported reading. Phase 8 connects tutor biographies, private weekly availability, trusted qualifications and ordered verification history. Phase 9 adds private adult-test tutor discovery through trusted matching RPCs. Public registration, real children, production discovery, bookings and live sessions remain closed.
 
 Presentation → feature hooks → typed repositories → Supabase Auth/PostgREST → PostgreSQL is the authenticated data path. The demo path continues through domain rules and its local repository. No service credential is present in the browser.
 
@@ -14,7 +14,7 @@ Presentation → feature hooks → typed repositories → Supabase Auth/PostgRES
 | --- | --- | --- |
 | Presentation | React/TypeScript SPA, self-hosted fonts, static offline cache | Android native client and tested low-memory browser support |
 | API gateway | Supabase Auth/PostgREST for adult test accounts; no privileged client credentials | TLS 1.3, 100 req/min rate limit, authorization, secure cookies and moderation |
-| Core services | Persistent learner/tutor RPCs; fictional matching/session/rubric simulations | Atomic availability locks, durable session orchestration, consent and notifications |
+| Core services | Persistent learner/tutor RPCs and adult-test discovery; separate fictional session/rubric simulations | Atomic availability locks, durable session orchestration, consent and notifications |
 | AI pipeline | Curated originals, labelled sample evaluation, coverage fallback | 768-dimension curriculum index, retrieval, grounded evaluation, translation |
 | Persistence | PostgreSQL/RLS for adult test records; separate local fictional preferences | Verified deployment/encryption/retention, Redis locks/queues, Qdrant |
 
@@ -73,4 +73,8 @@ Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and
 
 The tutor repository validates Auth identity and pins every request to that session token. Biography and availability RPCs accept no owner ID; they enforce the live adult tutor gate and optimistic integer revisions. The database serializes schedule counts per tutor and uses a GiST exclusion constraint to reject overlaps even across competing writes. Availability is fixed to Asia/Kolkata and has 15-minute–4-hour minute-aligned intervals, at most four per day/28 per week. Adjacent intervals are valid; disabled intervals must also remain non-overlapping. `enabled` records a personal preference and never enables discovery or booking.
 
-Subject/language qualifications, academic grade, verification, TSS and completed-session counts remain trusted writes. Verification is append-only, latest `event_number` first; even an approved test record is not actual physical verification. Preparation indicators count only a stored biography and saved intervals. Feedback displays genuine aggregate values or an empty state because detailed evaluation/session tables do not exist. No public tutor discovery API or bookability flag is introduced.
+Subject/language qualifications, academic grade, verification, TSS and completed-session counts remain trusted writes. Verification is append-only, latest `event_number` first; even an approved test record is not actual physical verification. Preparation indicators count only a stored biography and saved intervals. Feedback displays genuine aggregate values or an empty state because detailed evaluation/session tables do not exist. Phase 8 introduced no public tutor discovery API or bookability flag.
+
+## Adult-test discovery boundary (Phase 9)
+
+Authenticated learner `/tutors` mounts `TutorDiscovery`, initializes filters from the saved academic context and uses the shared session-pinned discovery repository. The server returns a bounded test-only projection after validating latest trusted eligibility, exact subject/language qualifications, effective verified grade and the SRS TSS floor/CMS weights. Tutor Settings persists a separate opt-in, default off. Cards disclose opaque test pseudonyms and matching facts only; private profiles, intervals and audit records retain existing RLS. Weekly compatibility is self-declared, never a confirmed session. Search changes/errors/offline/account changes clear cards; previews expire and refresh within 60 seconds. See [PHASE-9.md](PHASE-9.md) for the exact rules, privacy contract, snapshot/concurrency semantics, validation and production gates.
