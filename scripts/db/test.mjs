@@ -1,4 +1,5 @@
 import pg from "pg";
+import { testDiscoveryDatabase } from "./discovery-verification.mjs";
 import { testTutorConcurrency } from "./tutor-concurrency.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
@@ -73,6 +74,7 @@ try {
         await client.query("rollback");
       }
       await testTutorConcurrency(concurrencyUrl);
+      await testDiscoveryDatabase(concurrencyUrl);
     } finally {
       if (native) {
         await client.end();

@@ -797,6 +797,8 @@ export type Database = {
           bio: string;
           completed_sessions: number;
           created_at: string;
+          discovery_preview_enabled: boolean;
+          discovery_preview_id: string;
           required_role: Database["public"]["Enums"]["app_role"] | null;
           revision: number;
           teaching_skill_score: number | null;
@@ -809,6 +811,8 @@ export type Database = {
           bio?: string;
           completed_sessions?: number;
           created_at?: string;
+          discovery_preview_enabled?: boolean;
+          discovery_preview_id?: string;
           required_role?: never;
           revision?: number;
           teaching_skill_score?: number | null;
@@ -820,6 +824,8 @@ export type Database = {
           bio?: string;
           completed_sessions?: number;
           created_at?: string;
+          discovery_preview_enabled?: boolean;
+          discovery_preview_id?: string;
           required_role?: never;
           revision?: number;
           teaching_skill_score?: number | null;
@@ -978,6 +984,18 @@ export type Database = {
         Args: { p_id: string; p_revision: number };
         Returns: boolean;
       };
+      discover_test_tutors: {
+        Args: {
+          p_ends_at?: string;
+          p_language: Database["public"]["Enums"]["learning_language"];
+          p_preference_only?: boolean;
+          p_query?: string;
+          p_starts_at?: string;
+          p_subject_id: string;
+          p_weekday?: number;
+        };
+        Returns: Json;
+      };
       record_learner_reading: {
         Args: { p_lesson_id: string; p_mark_read?: boolean };
         Returns: {
@@ -1028,6 +1046,30 @@ export type Database = {
           bio: string;
           completed_sessions: number;
           created_at: string;
+          discovery_preview_enabled: boolean;
+          discovery_preview_id: string;
+          required_role: Database["public"]["Enums"]["app_role"] | null;
+          revision: number;
+          teaching_skill_score: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "tutor_profiles";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      set_tutor_discovery_preview: {
+        Args: { p_enabled: boolean; p_revision: number };
+        Returns: {
+          academic_grade: number;
+          bio: string;
+          completed_sessions: number;
+          created_at: string;
+          discovery_preview_enabled: boolean;
+          discovery_preview_id: string;
           required_role: Database["public"]["Enums"]["app_role"] | null;
           revision: number;
           teaching_skill_score: number | null;

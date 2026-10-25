@@ -1,3 +1,4 @@
+import { supabaseDiscoveryRepository } from "./discovery-repository";
 import { supabaseTutorRepository } from "./tutor-repository";
 import { createClient } from "@supabase/supabase-js";
 import { demoCurriculumRepository } from "../../data/curriculum";
@@ -33,5 +34,6 @@ export function createDataAccess(options: unknown) {
     curriculum: supabaseCurriculumRepository(client),
     learner: supabaseLearnerRepository(client),
     tutor: supabaseTutorRepository(client),
+    discovery: supabaseDiscoveryRepository(client),
   };
 }

@@ -18,6 +18,7 @@ export interface AvailabilityInput {
 export interface TutorRepository {
   load(): Promise<TutorSnapshot>;
   saveBio(bio: string, revision: number): Promise<void>;
+  setDiscoveryPreview(enabled: boolean, revision: number): Promise<void>;
   saveAvailability(input: AvailabilityInput): Promise<void>;
   deleteAvailability(id: string, revision: number): Promise<void>;
 }
@@ -103,6 +104,17 @@ export function supabaseTutorRepository(
         languages: languages.data!,
         verification: verification.data!,
       };
+    },
+    async setDiscoveryPreview(p_enabled, p_revision) {
+      const owner = await identity();
+      const result = await client
+        .rpc("set_tutor_discovery_preview", { p_enabled, p_revision })
+        .setHeader("Authorization", owner.header);
+      fail(result.error);
+      if (!result.data)
+        throw new Error(
+          "Your preview preference could not be confirmed. Refresh records.",
+        );
     },
     async saveBio(p_bio, p_revision) {
       const owner = await identity();
