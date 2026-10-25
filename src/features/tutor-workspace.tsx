@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { CalendarDays, LockKeyhole } from "lucide-react";
 import { Button, ButtonLink, EmptyState, Eyebrow } from "../components/ui";
@@ -142,6 +142,7 @@ function AvailabilityEditor({
   const [draft, setDraft] = useState<AvailabilityInput>(blank);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState("");
+  const form = useRef<HTMLFormElement>(null);
   function reset() {
     setDraft(blank());
     setError("");
@@ -192,6 +193,8 @@ function AvailabilityEditor({
                             ends_at: row.ends_at.slice(0, 5),
                           });
                           setError("");
+                          form.current?.scrollIntoView({ block: "start" });
+                          form.current?.focus({ preventScroll: true });
                         }}
                       >
                         Edit
@@ -254,6 +257,9 @@ function AvailabilityEditor({
         ))}
       </ol>
       <form
+        ref={form}
+        tabIndex={-1}
+        aria-label="Weekly interval editor"
         className="tutor-interval-form"
         onSubmit={async (e) => {
           e.preventDefault();
@@ -370,8 +376,20 @@ export function TutorContent({
   email: string;
 }) {
   const ws = useTutorWorkspace(access);
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const data = ws.data;
+  const hasData = !!data;
+  useEffect(() => {
+    if (hasData && ["#requests", "#schedule", "#growth"].includes(hash)) {
+      const section = document.getElementById(hash.slice(1));
+      section?.scrollIntoView({ block: "start" });
+      section?.focus({ preventScroll: true });
+    }
+  }, [pathname, hash, hasData]);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (ws.error) feedbackRef.current?.focus();
+  }, [ws.error]);
   const disabled = ws.loading || !!ws.pending || !!ws.error;
   const settings = pathname === "/settings";
   const feedback = pathname === "/studio/feedback";
@@ -397,7 +415,12 @@ export function TutorContent({
         bookings.
       </p>
       {ws.error && (
-        <div role="alert" className="account-feedback">
+        <div
+          ref={feedbackRef}
+          tabIndex={-1}
+          role="alert"
+          className="account-feedback"
+        >
           {ws.error}
         </div>
       )}
@@ -634,7 +657,7 @@ export function TutorContent({
               {feedback ? (
                 <EmptyState
                   title="No detailed Co-Teacher evaluations recorded."
-                  description="This workspace can show stored aggregate scores only. Detailed evaluation and session evidence are not available in the current schema. No sample feedback has been substituted."
+                  description="No detailed feedback is available for this account. Your recorded score and session count appear above. Sample feedback stays in the fictional demo."
                 />
               ) : (
                 <Link className="role-text-link" to="/studio/feedback">

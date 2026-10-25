@@ -59,6 +59,15 @@ async function ready() {
   );
 }
 describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth suites prove authorization)", () => {
+  it.each(["requests", "schedule", "growth"])(
+    "focuses #%s after asynchronous records load",
+    async (hash) => {
+      const f = fixture();
+      openAccount(f.access, `/studio#${hash}`);
+      await ready();
+      expect(document.getElementById(hash)).toHaveFocus();
+    },
+  );
   it("shows stored identity and honest empty states without demo history", async () => {
     const f = fixture();
     openAccount(f.access, "/studio");
@@ -115,6 +124,9 @@ describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth
       "Weekly availability saved. Real bookings remain closed.",
     );
     await user.click(screen.getByRole("button", { name: "Edit Monday 16:00" }));
+    expect(
+      screen.getByRole("form", { name: "Weekly interval editor" }),
+    ).toHaveFocus();
     await user.clear(screen.getByLabelText("Start time"));
     await user.type(screen.getByLabelText("Start time"), "15:30");
     await user.selectOptions(screen.getByLabelText("Day"), "0");
@@ -294,6 +306,33 @@ describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth
       await screen.findByText("No detailed Co-Teacher evaluations recorded."),
     ).toBeInTheDocument();
     expect(screen.queryByText("72.5")).not.toBeInTheDocument();
+  });
+  it("keeps a dirty biography through background checks and removes revoked access", async () => {
+    const f = fixture();
+    const user = userEvent.setup();
+    openAccount(f.access, "/settings");
+    const input = await screen.findByLabelText("Teaching biography");
+    await user.type(input, "A draft I am still writing");
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveValue("A draft I am still writing");
+    vi.useFakeTimers();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(60_000);
+    });
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveValue("A draft I am still writing");
+    vi.useRealTimers();
+    f.disable();
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    expect(await screen.findByRole("alert")).toHaveTextContent("revoked");
+    expect(
+      screen.queryByLabelText("Teaching biography"),
+    ).not.toBeInTheDocument();
   });
   it("drops pending private content on account switch and revoked access", async () => {
     const f = fixture();

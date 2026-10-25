@@ -122,6 +122,42 @@ describe("verified account and demo boundary (mocked transport; real API coverag
       screen.queryByRole("navigation", { name: "Workspace navigation" }),
     ).not.toBeInTheDocument();
   });
+  it("cannot restore an older identity between account-change notification and validation", async () => {
+    const f = setup("tutor");
+    open(f.access, "/studio");
+    await screen.findByRole("heading", {
+      name: "Welcome, Adult account owner.",
+    });
+    let finish!: (
+      value: Awaited<ReturnType<typeof f.access.client.auth.getUser>>,
+    ) => void;
+    vi.mocked(f.access.client.auth.getUser).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    await act(async () => {
+      window.dispatchEvent(new Event("focus"));
+    });
+    vi.useFakeTimers();
+    await act(async () => {
+      f.emit("SIGNED_IN", {
+        ...f.session,
+        user: { ...f.session.user, id: "00000000-0000-0000-0000-000000000002" },
+      });
+    });
+    await act(async () => {
+      finish({ data: { user: f.session.user }, error: null });
+    });
+    expect(
+      screen.queryByRole("heading", { name: "Welcome, Adult account owner." }),
+    ).not.toBeInTheDocument();
+    await act(async () => {
+      f.emit("SIGNED_OUT", null);
+      await vi.advanceTimersByTimeAsync(0);
+    });
+  });
   it("never imports fictional progress and uses the account learner repository", async () => {
     const { access } = setup("learner");
     localStorage.setItem(
