@@ -719,6 +719,7 @@ export type Database = {
           enabled: boolean;
           ends_at: string;
           id: string;
+          revision: number;
           starts_at: string;
           timezone: string;
           tutor_id: string;
@@ -731,6 +732,7 @@ export type Database = {
           enabled?: boolean;
           ends_at: string;
           id?: string;
+          revision?: number;
           starts_at: string;
           timezone?: string;
           tutor_id: string;
@@ -742,6 +744,7 @@ export type Database = {
           enabled?: boolean;
           ends_at?: string;
           id?: string;
+          revision?: number;
           starts_at?: string;
           timezone?: string;
           tutor_id?: string;
@@ -795,6 +798,7 @@ export type Database = {
           completed_sessions: number;
           created_at: string;
           required_role: Database["public"]["Enums"]["app_role"] | null;
+          revision: number;
           teaching_skill_score: number | null;
           updated_at: string;
           user_id: string;
@@ -806,6 +810,7 @@ export type Database = {
           completed_sessions?: number;
           created_at?: string;
           required_role?: never;
+          revision?: number;
           teaching_skill_score?: number | null;
           updated_at?: string;
           user_id: string;
@@ -816,6 +821,7 @@ export type Database = {
           completed_sessions?: number;
           created_at?: string;
           required_role?: never;
+          revision?: number;
           teaching_skill_score?: number | null;
           updated_at?: string;
           user_id?: string;
@@ -968,6 +974,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      delete_tutor_availability: {
+        Args: { p_id: string; p_revision: number };
+        Returns: boolean;
+      };
       record_learner_reading: {
         Args: { p_lesson_id: string; p_mark_read?: boolean };
         Returns: {
@@ -979,6 +989,54 @@ export type Database = {
         SetofOptions: {
           from: "*";
           to: "learner_lesson_activity";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_tutor_availability: {
+        Args: {
+          p_enabled: boolean;
+          p_ends_at: string;
+          p_id: string;
+          p_revision: number;
+          p_starts_at: string;
+          p_weekday: number;
+        };
+        Returns: {
+          created_at: string;
+          enabled: boolean;
+          ends_at: string;
+          id: string;
+          revision: number;
+          starts_at: string;
+          timezone: string;
+          tutor_id: string;
+          updated_at: string;
+          weekday: number;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "tutor_availability";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      save_tutor_bio: {
+        Args: { p_bio: string; p_revision: number };
+        Returns: {
+          academic_grade: number;
+          bio: string;
+          completed_sessions: number;
+          created_at: string;
+          required_role: Database["public"]["Enums"]["app_role"] | null;
+          revision: number;
+          teaching_skill_score: number | null;
+          updated_at: string;
+          user_id: string;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "tutor_profiles";
           isOneToOne: true;
           isSetofReturn: false;
         };

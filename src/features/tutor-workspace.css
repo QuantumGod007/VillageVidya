@@ -1,0 +1,105 @@
+.tutor-workspace {
+  overflow-wrap: anywhere;
+}
+.tutor-bio {
+  margin-top: 24px;
+}
+.tutor-bio textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+.tutor-bio .button {
+  margin-top: 12px;
+}
+.tutor-week {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.tutor-day {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  gap: 16px;
+}
+.tutor-day h3 {
+  font: 500 15px var(--font-sans);
+  padding-top: 8px;
+}
+.tutor-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+}
+.tutor-slot > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+.tutor-slot-actions,
+.tutor-form-actions,
+.tutor-delete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.tutor-slot-actions button {
+  padding: 8px 10px;
+  min-height: 40px;
+}
+.tutor-delete {
+  flex-basis: 100%;
+  padding: 12px 0;
+}
+.tutor-interval-form {
+  padding-top: 12px;
+}
+.tutor-time-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.tutor-enabled {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+.tutor-enabled input {
+  width: 18px;
+  height: 18px;
+}
+.tutor-form-actions {
+  margin-top: 16px;
+}
+.tutor-history {
+  padding-left: 20px;
+}
+.tutor-history li {
+  padding: 12px 0;
+}
+.tutor-workspace details {
+  margin-top: 20px;
+}
+.tutor-workspace summary {
+  cursor: pointer;
+  font-size: 14px;
+}
+@media (max-width: 600px) {
+  .tutor-day {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .tutor-time-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+  .tutor-slot-actions {
+    gap: 2px;
+  }
+}

@@ -124,9 +124,13 @@ export function AccountProvider({
   useEffect(() => {
     if (!access) return;
     let disposed = false;
-    async function validate() {
+    async function validate(background = false) {
       const request = ++generation.current;
-      setState((p) => ({ ...p, status: "loading", account: null }));
+      setState((p) =>
+        background && p.status === "authenticated"
+          ? p
+          : { ...p, status: "loading", account: null },
+      );
       try {
         const session = await access!.client.auth.getSession();
         if (session.error) throw session.error;
@@ -189,23 +193,28 @@ export function AccountProvider({
             : "Your session ended. Please sign in again.",
         }));
       } else {
+        // Invalidate an older verification immediately, before the scheduled
+        // validation runs, so an account change cannot restore stale identity.
+        ++generation.current;
         // Do not await Auth or database calls inside Supabase's auth lock.
+        const background = event === "TOKEN_REFRESHED";
         if (session)
-          setState((p) => ({
-            ...p,
-            status: "loading",
-            account: null,
-            preferAccount: true,
-          }));
+          setState((p) =>
+            background &&
+            p.status === "authenticated" &&
+            p.account?.id === session.user.id
+              ? p
+              : { ...p, status: "loading", account: null, preferAccount: true },
+          );
         setTimeout(() => {
-          if (!disposed) void validate();
+          if (!disposed) void validate(background);
         }, 0);
       }
     });
     void validate();
     const check = () => {
       if (sessionPresent.current && document.visibilityState !== "hidden")
-        void validate();
+        void validate(true);
     };
     const timer = setInterval(check, 60_000);
     window.addEventListener("focus", check);

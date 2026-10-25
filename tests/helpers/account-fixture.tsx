@@ -61,6 +61,7 @@ export function setupAccount(role: Role = "tutor", restored = true) {
             user_id: id,
             required_role: "tutor",
             academic_grade: 12,
+            revision: 1,
             bio: "",
             teaching_skill_score: null,
             completed_sessions: 0,
@@ -146,6 +147,20 @@ export function setupAccount(role: Role = "tutor", restored = true) {
         lessons: [],
         assessments: [],
       }),
+    },
+    tutor: {
+      load: vi
+        .fn()
+        .mockImplementation(async () => ({
+          profile: data.tutor_profiles,
+          availability: [],
+          subjects: [],
+          languages: [],
+          verification: [],
+        })),
+      saveBio: vi.fn(),
+      saveAvailability: vi.fn(),
+      deleteAvailability: vi.fn(),
     },
     learner: {
       progress: vi.fn().mockResolvedValue([]),

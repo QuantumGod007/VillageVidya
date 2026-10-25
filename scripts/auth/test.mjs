@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { testTutorApi } from "./tutor-tests.mjs";
 import { randomUUID, randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";
@@ -29,7 +30,7 @@ const bundle = await build({
     lib: { entry: "scripts/auth/learner-entry.ts", formats: ["es"] },
   },
 });
-const { supabaseLearnerRepository } = await import(
+const { supabaseLearnerRepository, supabaseTutorRepository } = await import(
   `data:text/javascript;base64,${Buffer.from((Array.isArray(bundle) ? bundle[0] : bundle).output[0].code).toString("base64")}`
 );
 const config = localConfig();
@@ -95,6 +96,7 @@ try {
     (r) => account(r),
   );
   accounts.push(account("learner", "2"));
+  accounts.push(account("tutor", "2"));
   for (const details of accounts)
     ids.push(await provisionAdult(config, details));
   const invalid = transientClient(config.url, config.publicKey);
@@ -447,6 +449,34 @@ try {
     revokedActivity.ok && (await revokedActivity.json()).length === 0,
     "signed-out token cannot replay reading history",
   );
+  await testTutorApi({
+    repo: supabaseTutorRepository,
+    tutor,
+    learner,
+    anonymous: transientClient(config.url, config.publicKey),
+    other: signed[6].client,
+    server,
+    config,
+    check,
+    ownerId: ids[1],
+    otherId: ids[6],
+    reviewerId: ids[3],
+    tutorSession: signed[1].session,
+    loginAgain: async () => (await login(accounts[1])).client,
+    restore: async (session) => {
+      const client = transientClient(config.url, config.publicKey);
+      clients.push(client);
+      assert.ifError(
+        (
+          await client.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          })
+        ).error,
+      );
+      return client;
+    },
+  });
   await db.query(
     "update public.adult_test_accounts set enabled=false where user_id=$1",
     [ids[1]],
@@ -454,6 +484,12 @@ try {
   await assert.rejects(() => verifiedAccount(tutor));
   assertions++;
   console.log("PASS disabled adult access fails closed");
+  await assert.rejects(() => supabaseTutorRepository(tutor).load());
+  check(
+    !!(await tutor.rpc("save_tutor_bio", { p_bio: "disabled", p_revision: 1 }))
+      .error,
+    "disabled adult tutor gate blocks RPC as well as reads",
+  );
   // Test the same PKCE recovery flow as the browser, through the real local
   // SMTP capture. No recovery link or credential is printed or sent externally.
   const recovering = createClient(config.url, config.publicKey, {
@@ -529,7 +565,11 @@ try {
   );
 } finally {
   for (const client of clients) await client.auth.signOut().catch(() => {});
-  // No consent or verification audit rows are created by these tests.
+  // Test-only cleanup of explicitly disposable evidence; service API cannot erase audit history.
+  await db.query(
+    "delete from public.tutor_verification_records where tutor_id=any($1::uuid[])",
+    [ids],
+  );
   await db.query(
     "delete from public.guardian_relationships where guardian_id=any($1::uuid[])",
     [ids],

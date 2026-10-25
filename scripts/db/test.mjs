@@ -1,4 +1,5 @@
 import pg from "pg";
+import { testTutorConcurrency } from "./tutor-concurrency.mjs";
 import { readFile, readdir } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import assert from "node:assert/strict";
@@ -21,10 +22,12 @@ try {
   for (let round = 0; round < passes; round++) {
     const name = `vv_phase5_test_${randomBytes(6).toString("hex")}`;
     let client = admin;
+    let concurrencyUrl = connectionString;
     if (native) {
       await admin.query(`create database "${name}"`);
       const child = new URL(url);
       child.pathname = `/${name}`;
+      concurrencyUrl = child.toString();
       client = new pg.Client({ connectionString: child.toString() });
       await client.connect();
     }
@@ -69,6 +72,7 @@ try {
       } finally {
         await client.query("rollback");
       }
+      await testTutorConcurrency(concurrencyUrl);
     } finally {
       if (native) {
         await client.end();
