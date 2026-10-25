@@ -159,6 +159,10 @@ export function DiscoveryContent({
   );
   const ws = useTutorDiscovery(access, dirty ? null : criteria);
   const errorRef = useRef<HTMLDivElement>(null);
+  const formErrorRef = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    if (formError) formErrorRef.current?.focus();
+  }, [formError]);
   useEffect(() => {
     if (ws.error) errorRef.current?.focus();
   }, [ws.error]);
@@ -420,7 +424,12 @@ export function DiscoveryContent({
           .
         </p>
         {formError && (
-          <p role="alert" className="account-feedback">
+          <p
+            ref={formErrorRef}
+            tabIndex={-1}
+            role="alert"
+            className="account-feedback"
+          >
             {formError}
           </p>
         )}

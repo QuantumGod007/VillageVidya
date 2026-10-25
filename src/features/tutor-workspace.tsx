@@ -467,7 +467,7 @@ export function TutorContent({
                 </div>
               </dl>
               <Biography
-                key={data.profile.revision}
+                key={data.profile.bio}
                 profile={data.profile}
                 disabled={disabled}
                 pending={ws.pending === "bio"}

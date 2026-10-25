@@ -40,6 +40,10 @@ Use the isolated local Supabase setup in [DATABASE.md](DATABASE.md), provision c
 
 The normal seed and provisioning command still create **no** qualifications, verification, TSS or discovery opt-in. Existing trusted local test records are required for a positive result. The disposable records created by `npm run auth:test` demonstrate the full positive/negative database path, then are cleaned up; they are explicitly marked local adult test evidence and do not become real-world verification. For a persistent classroom demonstration, the trusted local operator must intentionally prepare equivalent test qualification/score/verification records for provisioned adults, and the tutor must independently opt in through Settings. There is no browser approval button or automated production approval command.
 
+## Interaction fixes
+
+Browser QA found that invalid weekly-window feedback could appear below the mobile viewport; it now receives focus. Changing the new preview preference also increments the profile revision. The biography editor now resets only when stored biography content changes, so toggling this separate preference preserves an unsaved introduction while still using the latest server revision for an eventual save. Regression assertions cover both behaviors.
+
 ## Verification and remaining work
 
 - Domain tests cover the SRS weights, grade and TSS boundaries, missing evidence, all verification states and deterministic tie ordering.

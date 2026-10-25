@@ -126,6 +126,7 @@ describe("authenticated discovery UI (transport fixtures; real API tests validat
     await user.click(
       screen.getByRole("button", { name: "Search test tutors" }),
     );
+    expect(screen.getByRole("alert")).toHaveFocus();
     expect(screen.getByRole("alert")).toHaveTextContent(
       "15 minutes to 4 hours",
     );
@@ -305,6 +306,10 @@ describe("authenticated discovery UI (transport fixtures; real API tests validat
       },
     );
     openAccount(f.access, "/settings");
+    await user.type(
+      await screen.findByLabelText("Teaching biography"),
+      "An introduction I have not saved yet",
+    );
     await user.click(
       await screen.findByRole("button", { name: "Join adult test preview" }),
     );
@@ -312,10 +317,17 @@ describe("authenticated discovery UI (transport fixtures; real API tests validat
       "Adult test preview preference saved. Real tutoring remains closed.",
     );
     expect(f.access.tutor.setDiscoveryPreview).toHaveBeenCalledWith(true, 1);
+    expect(screen.getByLabelText("Teaching biography")).toHaveValue(
+      "An introduction I have not saved yet",
+    );
+    expect(f.access.tutor.saveBio).not.toHaveBeenCalled();
     expect(screen.getByText("Verification not started")).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Leave adult test preview" }),
     );
     await screen.findByRole("button", { name: "Join adult test preview" });
+    expect(screen.getByLabelText("Teaching biography")).toHaveValue(
+      "An introduction I have not saved yet",
+    );
   });
 });
