@@ -123,6 +123,17 @@ export function AppRoutes() {
         >
           <Route element={<Workspace />}>
             <Route
+              path="safety"
+              element={
+                <WorkspacePage>
+                  <EmptyState
+                    title="Adult-test safety workspace."
+                    description="Authenticated adult testers can submit synthetic reports from their account workspace."
+                  />
+                </WorkspacePage>
+              }
+            />
+            <Route
               path="settings"
               element={
                 <WorkspacePage>

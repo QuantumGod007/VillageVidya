@@ -1,0 +1,165 @@
+.trust-workspace {
+  overflow-wrap: anywhere;
+}
+.trust-toolbar,
+.trust-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 20px 0;
+}
+.trust-search {
+  display: flex;
+  align-items: end;
+  gap: 16px;
+  margin: 25px 0;
+}
+.trust-search .field {
+  flex: 1;
+}
+.trust-card-list {
+  display: grid;
+  gap: 22px;
+  margin-top: 20px;
+}
+.trust-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  padding: 26px;
+}
+.trust-card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+.trust-card h3 {
+  font: 400 30px/1.2 var(--font-editorial);
+}
+.trust-card h4 {
+  margin: 10px 0;
+  font-size: 18px;
+}
+.trust-status {
+  border: 1px solid var(--line);
+  background: #f6f6fc;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+.trust-facts {
+  display: grid;
+  gap: 12px;
+  margin: 20px 0;
+}
+.trust-facts > div {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 14px;
+  font-size: 13px;
+}
+.trust-facts dt {
+  color: var(--muted);
+}
+.trust-synthetic {
+  padding: 18px;
+  background: #f5f4ed;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.8;
+  margin: 20px 0;
+}
+.trust-decision {
+  display: grid;
+  gap: 16px;
+  margin-top: 20px;
+}
+.trust-decision .button {
+  justify-self: start;
+}
+.trust-decision-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.trust-missing {
+  padding-left: 20px;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.trust-history {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.trust-history ol,
+.trust-audit {
+  padding-left: 20px;
+}
+.trust-history li,
+.trust-audit li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.trust-learner {
+  border: 1px solid var(--line);
+  background: #f7f9f4;
+  border-radius: 12px;
+  padding: 18px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+.trust-learner ul {
+  padding-left: 18px;
+}
+.trust-account-list {
+  margin-top: 20px;
+  font-size: 13px;
+}
+.trust-account-list summary {
+  cursor: pointer;
+  padding: 12px 0;
+}
+.trust-account-list li {
+  margin: 12px 0;
+}
+.trust-account-list code {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+}
+.trust-checkbox {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  font-size: 13px;
+}
+.trust-checkbox input {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+@media (max-width: 650px) {
+  .trust-card {
+    padding: 20px;
+  }
+  .trust-card-title {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .trust-facts > div,
+  .trust-decision-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .trust-search {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

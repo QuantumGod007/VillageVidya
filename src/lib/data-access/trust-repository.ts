@@ -32,6 +32,7 @@ export const trustWorkspaceSchema = z
         z
           .object({
             tutor_id: uuid,
+            target_active: z.boolean(),
             label: z.string(),
             academic_grade: z.number(),
             teaching_skill_score: z.number().nullable(),
