@@ -33,7 +33,8 @@ create table public.test_safety_actions (
   actor_id uuid not null references public.profiles(id) on delete restrict,
   from_status public.test_safety_status, to_status public.test_safety_status not null,
   action_note text not null check(length(trim(action_note)) between 10 and 500),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  check ((from_status is null and to_status='submitted') or (from_status='submitted' and to_status='under_review') or (from_status='under_review' and to_status in ('resolved','closed')))
 );
 create index test_safety_actions_history_idx on public.test_safety_actions(report_id,event_number desc);
 alter table public.guardian_relationships add column revision integer not null default 1 check(revision>0);
@@ -49,7 +50,7 @@ do $$ declare t text; begin
     execute format('create policy trusted_service on public.%I to service_role using (true) with check (true)',t);
   end loop;
 end $$;
-grant insert on public.tutor_test_evidence,public.test_trust_audit,public.test_safety_actions to service_role;
+grant insert on public.tutor_test_evidence to service_role;
 grant usage,select on sequence public.tutor_test_evidence_event_number_seq,public.test_safety_actions_event_number_seq to service_role;
 revoke all on sequence public.tutor_test_evidence_event_number_seq,public.test_safety_actions_event_number_seq from public,anon,authenticated;
 grant select on public.test_safety_reports to authenticated;
@@ -113,7 +114,7 @@ begin
   if p_reason is null or length(trim(p_reason)) not between 10 and 400 then raise exception 'A decision reason of 10–400 characters is required' using errcode='22023'; end if;
   cached:=private.begin_test_operation(p_request_id,actor,'tutor_review',payload); if cached is not null then return cached; end if;
   select academic_grade into grade from public.tutor_profiles where user_id=p_tutor_id for update;
-  if not found or not private.test_target_active(p_tutor_id,'tutor') then raise exception 'Adult test tutor unavailable' using errcode='42501'; end if;
+  if not found or not exists(select 1 from public.adult_test_accounts where user_id=p_tutor_id) or (p_status is distinct from 'revoked' and not private.test_target_active(p_tutor_id,'tutor')) then raise exception 'Adult test tutor unavailable' using errcode='42501'; end if;
   if p_token is distinct from private.tutor_review_token(p_tutor_id) then raise exception 'Review evidence changed. Refresh before deciding' using errcode='40001'; end if;
   select status into latest from public.tutor_verification_records where tutor_id=p_tutor_id order by event_number desc limit 1;
   if p_status is null or p_status='pending' or (p_status='revoked' and latest is distinct from 'approved')
@@ -144,7 +145,7 @@ begin
   if p_reason is null or length(trim(p_reason)) not between 10 and 400 or p_status is null or p_status not in ('approved','revoked') then raise exception 'Choose a test-link action and a reason of 10–400 characters' using errcode='22023'; end if;
   cached:=private.begin_test_operation(p_request_id,actor,'relationship_review',payload); if cached is not null then return cached; end if;
   perform pg_advisory_xact_lock(hashtextextended(p_guardian_id::text||p_learner_id::text,1011));
-  if not private.test_target_active(p_guardian_id,'guardian') or not private.test_target_active(p_learner_id,'learner') then raise exception 'Active adult test participants required' using errcode='42501'; end if;
+  if not exists(select 1 from public.adult_test_accounts where user_id=p_guardian_id) or not exists(select 1 from public.adult_test_accounts where user_id=p_learner_id) or (p_status='approved' and (not private.test_target_active(p_guardian_id,'guardian') or not private.test_target_active(p_learner_id,'learner'))) then raise exception 'Active adult test participants required' using errcode='42501'; end if;
   select * into rel from public.guardian_relationships where guardian_id=p_guardian_id and learner_id=p_learner_id for update;
   if coalesce(rel.revision,0) is distinct from p_revision then raise exception 'Relationship changed. Refresh before deciding' using errcode='40001'; end if;
   if (rel.id is null and p_status<>'approved') or rel.status=p_status then raise exception 'Invalid relationship transition' using errcode='22023'; end if;
@@ -168,7 +169,7 @@ begin
   if p_grant is null or p_reason is null or length(trim(p_reason)) not between 10 and 400 then raise exception 'Explicit consent choice and reason required' using errcode='22023'; end if;
   cached:=private.begin_test_operation(p_request_id,actor,'consent',payload); if cached is not null then return cached; end if;
   select * into rel from public.guardian_relationships where id=p_relationship_id and guardian_id=actor for update;
-  if not found or rel.status<>'approved' or not private.test_target_active(rel.learner_id,'learner') then raise exception 'Approved adult test relationship required' using errcode='42501'; end if;
+  if not found or rel.status<>'approved' or (p_grant and not private.test_target_active(rel.learner_id,'learner')) then raise exception 'Approved adult test relationship required' using errcode='42501'; end if;
   select * into latest from public.guardian_consent_records where relationship_id=rel.id order by event_number desc limit 1;
   if coalesce(latest.event_number,0) is distinct from p_expected_event then raise exception 'Consent changed. Refresh before deciding' using errcode='40001'; end if;
   if (p_grant and latest.status='approved') or (not p_grant and latest.status is distinct from 'approved') then raise exception 'Invalid test consent transition' using errcode='22023'; end if;

@@ -1,4 +1,9 @@
 import assert from "node:assert/strict";
+import {
+  prepareClassroom,
+  exerciseClassroom,
+  cleanupClassroom,
+} from "./classroom.mjs";
 import { testDiscoveryApi } from "./discovery-tests.mjs";
 import { testTutorApi } from "./tutor-tests.mjs";
 import { randomUUID, randomBytes } from "node:crypto";
@@ -584,6 +589,12 @@ try {
     ).error,
     "recovered account can sign in with new password",
   );
+  const classroom = await prepareClassroom(config, { acknowledged: true });
+  try {
+    await exerciseClassroom(config, classroom, check);
+  } finally {
+    await cleanupClassroom(config, classroom);
+  }
   console.log(
     `Real Supabase Auth/API integration passed: ${assertions} checks. No real child registration or tutoring was enabled.`,
   );

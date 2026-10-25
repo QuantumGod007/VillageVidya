@@ -16,7 +16,7 @@ begin
   if staff then
     select coalesce(jsonb_agg(item),'[]') into tutors from (
       select jsonb_build_object('tutor_id',tp.user_id,'label','Test tutor '||left(tp.discovery_preview_id::text,8),
-        'academic_grade',tp.academic_grade,'teaching_skill_score',tp.teaching_skill_score,
+        'target_active',private.test_target_active(tp.user_id,'tutor'),'academic_grade',tp.academic_grade,'teaching_skill_score',tp.teaching_skill_score,
         'status',coalesce(v.status::text,'not_started'),'last_event',coalesce(v.event_number,0),'last_reason',v.decision_note,
         'reviewed_at',v.created_at,'reviewer_id',v.reviewed_by,'token',private.tutor_review_token(tp.user_id),
         'subjects',coalesce((select jsonb_agg(q.subject_id order by q.subject_id) from public.tutor_subject_qualifications q where q.tutor_id=tp.user_id),'[]'),
@@ -28,7 +28,7 @@ begin
       ) item from public.tutor_profiles tp
       left join lateral(select * from public.tutor_verification_records where tutor_id=tp.user_id order by event_number desc limit 1) v on true
       left join lateral(select * from public.tutor_test_evidence where tutor_id=tp.user_id order by event_number desc limit 1) e on true
-      where tp.user_id<>actor and private.test_target_active(tp.user_id,'tutor')
+      where tp.user_id<>actor and exists(select 1 from public.adult_test_accounts where user_id=tp.user_id) and (private.test_target_active(tp.user_id,'tutor') or v.status='approved')
         and (strpos(lower(tp.user_id::text),lower(trim(p_query)))>0 or strpos(lower('Test tutor '||left(tp.discovery_preview_id::text,8)),lower(trim(p_query)))>0)
       order by case when v.status is null or v.status='pending' then 0 else 1 end,tp.created_at,tp.user_id limit 51
     ) x;

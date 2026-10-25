@@ -1,4 +1,5 @@
 import pg from "pg";
+import { testTrustConcurrency } from "./trust-concurrency.mjs";
 import { testDiscoveryDatabase } from "./discovery-verification.mjs";
 import { testTutorConcurrency } from "./tutor-concurrency.mjs";
 import { readFile, readdir } from "node:fs/promises";
@@ -75,6 +76,7 @@ try {
       }
       await testTutorConcurrency(concurrencyUrl);
       await testDiscoveryDatabase(concurrencyUrl);
+      await testTrustConcurrency(concurrencyUrl);
     } finally {
       if (native) {
         await client.end();
