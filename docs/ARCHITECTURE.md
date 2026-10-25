@@ -2,25 +2,25 @@
 
 ## Current release
 
-The deployed application is a static React demonstration. It contains no server secrets and cannot register a real person. `StoreProvider` is the single local data-access boundary. Zod validates persisted preference/progress data; malformed or obsolete storage resets to known fictional defaults. Only preferences, mastery, bookmark IDs, sample review IDs and a practice-goal flag are persisted. A fictional role and expiry are stored in session storage.
+The React application has two independent workspaces. The default fictional demo uses `StoreProvider`, validated local preferences/progress and in-memory conversations, matching and session simulations. Its role picker is a demo mechanism; sample scores and verification never transfer to real accounts.
 
-Messages, notes, questions, match requests and session summaries are held in memory. Role selection is an explicit demo mechanism. A user can change the role in the UI; no claim of secure authentication is made.
+When explicitly configured for Supabase, `AccountProvider` shares one public-key client with typed repositories and resolves identity and roles from Auth and PostgreSQL. Only provisioned adult test accounts with live, enabled sessions enter private routes. Phase 7 connects learner enrolment, saved lessons and self-reported reading. Phase 8 connects tutor biographies, private weekly availability, trusted qualifications and ordered verification history. Public registration, real children, matching, bookings and live sessions remain closed.
 
-Presentation → features → domain rules → demo repository is the dependency direction. Components do not reimplement CMS or TSS formulas. Tutor availability and completed sample evaluations are derived into the catalog so the Studio and discovery stay consistent during a visit.
+Presentation → feature hooks → typed repositories → Supabase Auth/PostgREST → PostgreSQL is the authenticated data path. The demo path continues through domain rules and its local repository. No service credential is present in the browser.
 
 ## Relationship to the SRS five tiers
 
 | SRS tier | This release | Production work |
 | --- | --- | --- |
 | Presentation | React/TypeScript SPA, self-hosted fonts, static offline cache | Android native client and tested low-memory browser support |
-| API gateway | No privileged client operations or external requests | TLS 1.3, 100 req/min rate limit, authorization, secure cookies and moderation |
-| Core services | Pure matching, eligibility, request/session state, rubric and progress calculations | Atomic availability locks, durable session orchestration, consent and notifications |
+| API gateway | Supabase Auth/PostgREST for adult test accounts; no privileged client credentials | TLS 1.3, 100 req/min rate limit, authorization, secure cookies and moderation |
+| Core services | Persistent learner/tutor RPCs; fictional matching/session/rubric simulations | Atomic availability locks, durable session orchestration, consent and notifications |
 | AI pipeline | Curated originals, labelled sample evaluation, coverage fallback | 768-dimension curriculum index, retrieval, grounded evaluation, translation |
-| Persistence | Validated fictional preferences in local storage; memory-only transcripts | PostgreSQL, encrypted private records, Redis locks/queues, Qdrant |
+| Persistence | PostgreSQL/RLS for adult test records; separate local fictional preferences | Verified deployment/encryption/retention, Redis locks/queues, Qdrant |
 
-This is a pragmatic vertical slice, not an implementation of the SRS microservice cluster. A versioned Supabase-compatible PostgreSQL/RLS foundation is included; the UI remains disconnected from it. No Redis, vector database, queue, gateway, or production auth server is represented as running.
+This is a pragmatic vertical slice, not an implementation of the SRS microservice cluster. The authenticated learner and tutor UI uses the versioned Supabase PostgreSQL/RLS schema. No Redis, vector database, queue, gateway, or production auth server is represented as running.
 
-## Rules that are active locally
+## Rules active in the fictional demo
 
 - Grade boundary: tutor verified grade must be at least the requested grade.
 - Verification and TSS floor: verified flag and TSS ≥ 50 are mandatory before ranking. Schedule availability affects CMS; an offline eligible tutor may be scheduled but cannot receive an immediate request.
@@ -33,15 +33,15 @@ This is a pragmatic vertical slice, not an implementation of the SRS microservic
 
 ## Before production registration can open
 
-1. Run a secure backend. Authentication needs cryptographic six-digit OTPs with ten-minute validity, rate limits, replay prevention, and non-enumerating responses. The SRS also specifies Argon2id password hashing and 15-minute JWTs with rotating HttpOnly refresh cookies. Resolve the OTP/password UX before selecting the auth provider.
-2. Create server-owned roles. A client may never promote itself, alter verified grade, consent state, TSS, or moderation status.
+1. Validate production authentication and operations beyond the adult test release. The SRS calls for cryptographic six-digit OTPs with ten-minute validity, rate limits, replay prevention, and non-enumerating responses. The SRS also specifies Argon2id password hashing and 15-minute JWTs with rotating HttpOnly refresh cookies. Reconcile the production OTP/password and cookie requirements with the current Supabase adult test flow.
+2. Maintain existing server-owned roles and add audited privileged workflows. A client may never promote itself, alter verified grade, consent state, TSS, or moderation status.
 3. Implement a verified guardian relationship and immutable consent audit, plus real Local Champion physical sign-off. Do not infer consent from a checkbox or automatically mark a user verified.
 4. Run all messages through a server safety boundary before persistence and delivery. Add language-aware PII/address redaction, audio moderation, severe-event termination, account freezing, and accountable Champion/admin escalation. The current local regex is insufficient.
 5. Verify encryption at rest for profiles, consent and transcripts, secure key management, TLS, retention/deletion rules, and least-privilege operations. A relational schema alone cannot provide AES-256 storage encryption.
 6. Implement a curriculum ingestion pipeline with 300–500-token chunks, 50-token overlap, 768-dimensional vectors and grade/subject/chapter/objective metadata. Record actual source spans. Retrieval acceptance uses >0.78; <0.65 routes to humans. Treat the unspecified intermediate confidence range conservatively by withholding a verified answer until clarified.
 7. Add authenticated WebSocket messaging, Redis locking and durable queues; implement WebRTC Opus 12 kbps only after safety and bandwidth testing.
 8. Connect signed SMS callbacks, Sunday 18:00 IST localized digests, the 60-second push fallback, and at most two non-critical alerts per day. Unicode SMS encoding/provider segments need explicit verification.
-9. Replace local storage with an approved persistence model for real users. Cache only non-sensitive curriculum under 50 MB. Implement server-authoritative timestamp conflict resolution and test FIFO IndexedDB delta replay.
+9. Extend the existing PostgreSQL persistence model for production users; private account records already bypass demo local storage. Cache only non-sensitive curriculum under 50 MB. Implement server-authoritative timestamp conflict resolution and test FIFO IndexedDB delta replay.
 
 No production integration should be enabled by a frontend environment switch. A future server adapter must deny operations when trust services are unavailable. Do not collect real minors’ information while those gates are incomplete.
 
@@ -51,7 +51,7 @@ The production build enumerates only static HTML, JS, CSS, SVG and fonts. A vers
 
 The worker is enabled only in production, on HTTPS or localhost. A first successful online production load is required. Cache lifetime is versioned; activation deletes only old Village Vidya static caches, not unrelated origin storage. Development builds deliberately skip registration.
 
-## Future backend boundary
+## Authenticated data boundary
 
 Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and typed repositories. Scores, roles, consent, verification and curriculum writes remain trusted-service operations. Phase 6 adds `AccountProvider` with one authenticated client, server-validated identity and database-assigned roles. Account routes never mount fictional feature components; their repositories cannot import browser progress. Restrictive live-session/adult-test policies intersect existing ownership checks. Default demo mode still uses its original adapter; frontend gates cannot substitute for database policies. See [DATABASE.md](DATABASE.md) for setup, the access matrix and production gates.
 
@@ -65,4 +65,12 @@ Phase 5 adds versioned migrations, explicit SQL grants, ownership-scoped RLS and
 
 ## Academic context boundary (Phase 4)
 
-`domain/curriculum.ts` owns learner Grades 4–10 and academic context validation. `data/curriculum.ts` supplies the local catalog through a typed repository contract, with board/grade/subject/chapter foreign keys and separate lesson/assessment records. Shared filters drive discovery, recommendations, saved counts, progress and curated AI. Tutor grades stay separate. Request snapshots retain the learner context and eligible lesson through cascading and practice rooms. Legacy preferences default to the original CBSE sample; invalid old learner grades normalize to 8 without discarding valid checkpoint/bookmark data. No database is connected. See [PHASE-4.md](PHASE-4.md) for coverage, provenance, migration and limitations.
+`domain/curriculum.ts` owns learner Grades 4–10 and academic context validation. `data/curriculum.ts` supplies the local catalog through a typed repository contract, with board/grade/subject/chapter foreign keys and separate lesson/assessment records. Shared filters drive discovery, recommendations, saved counts, progress and curated AI. Tutor grades stay separate. Request snapshots retain the learner context and eligible lesson through cascading and practice rooms. Legacy preferences default to the original CBSE sample; invalid old learner grades normalize to 8 without discarding valid checkpoint/bookmark data. This paragraph describes the fictional demo adapter; authenticated accounts now load the published database catalog. See [PHASE-4.md](PHASE-4.md) for coverage, provenance, migration and limitations.
+
+## Persistent tutor workspace (Phase 8)
+
+`AccountWorkspace` mounts `TutorWorkspace` only for authenticated tutor routes `/studio`, `/settings` and `/studio/feedback`. The account-keyed component and hook invalidate obsolete responses on unmount/account change, serialize UI writes, refresh on focus/online/manual retry, and display confirmed server state. Failed writes keep drafts until refreshed; refreshing changed records resets their editors. The landing page, all five role destinations and fictional demo components remain independent.
+
+The tutor repository validates Auth identity and pins every request to that session token. Biography and availability RPCs accept no owner ID; they enforce the live adult tutor gate and optimistic integer revisions. The database serializes schedule counts per tutor and uses a GiST exclusion constraint to reject overlaps even across competing writes. Availability is fixed to Asia/Kolkata and has 15-minute–4-hour minute-aligned intervals, at most four per day/28 per week. Adjacent intervals are valid; disabled intervals must also remain non-overlapping. `enabled` records a personal preference and never enables discovery or booking.
+
+Subject/language qualifications, academic grade, verification, TSS and completed-session counts remain trusted writes. Verification is append-only, latest `event_number` first; even an approved test record is not actual physical verification. Preparation indicators count only a stored biography and saved intervals. Feedback displays genuine aggregate values or an empty state because detailed evaluation/session tables do not exist. No public tutor discovery API or bookability flag is introduced.
