@@ -1,0 +1,245 @@
+.real-discovery {
+  overflow-wrap: anywhere;
+}
+.discovery-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 32px;
+}
+.discovery-heading h1 em {
+  font-family: var(--font-editorial);
+  font-weight: 400;
+}
+.discovery-trust-note {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex: 0 0 220px;
+  font-size: 14px;
+}
+.discovery-trust-note span {
+  color: var(--muted);
+  font-size: 12px;
+}
+.discovery-filters {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 18px;
+  padding: 25px;
+  margin: 30px 0 36px;
+}
+.discovery-academic-fields {
+  display: grid;
+  grid-template-columns: 1.25fr 0.8fr 1.2fr 0.8fr;
+  gap: 16px;
+}
+.discovery-search-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 20px;
+}
+.discovery-search-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.discovery-search-input input {
+  min-width: 0;
+  flex: 1;
+}
+.discovery-window {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 16px;
+  margin-top: 20px;
+}
+.discovery-filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin: 22px 0 10px;
+}
+.discovery-filters .small .button {
+  padding: 0;
+  min-height: auto;
+  font-size: inherit;
+  display: inline;
+}
+.discovery-context {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.discovery-cards {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin: 24px 0;
+}
+.discovery-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  padding: 26px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.discovery-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.discovery-card-heading h3 {
+  font: 400 29px/1.15 var(--font-editorial);
+  margin: 8px 0;
+}
+.discovery-rank {
+  display: grid;
+  place-items: center;
+  min-width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  color: var(--blue);
+  background: #f0f1ff;
+  font-size: 15px;
+}
+.discovery-card-scores {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 20px 0;
+  margin: 24px 0 20px;
+  gap: 16px;
+}
+.discovery-card-scores > div {
+  display: grid;
+  gap: 5px;
+}
+.discovery-card-scores strong {
+  font: 400 34px var(--font-editorial);
+}
+.discovery-card-scores small {
+  font: 400 12px var(--font-sans);
+  color: var(--muted);
+  margin-left: 3px;
+}
+.discovery-card-scores span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.discovery-preference {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.discovery-preference svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.discovery-preference.matches {
+  color: #387452;
+}
+.discovery-card details {
+  margin: 20px 0;
+  font-size: 13px;
+}
+.discovery-card summary {
+  cursor: pointer;
+  font-weight: 500;
+  padding: 8px 0;
+}
+.discovery-card details ul {
+  padding-left: 18px;
+  margin: 12px 0;
+}
+.discovery-card details li {
+  margin-bottom: 8px;
+}
+.discovery-no-booking {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.discovery-explainer {
+  display: flex;
+  gap: 18px;
+  padding: 28px 0;
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+}
+.discovery-explainer > svg {
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+.discovery-explainer h2 {
+  font: 400 30px var(--font-editorial);
+  margin-bottom: 12px;
+}
+.discovery-explainer p {
+  font-size: 13px;
+  line-height: 1.8;
+  max-width: 770px;
+}
+@media (max-width: 1100px) {
+  .discovery-academic-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .discovery-heading {
+    align-items: flex-start;
+  }
+  .discovery-trust-note {
+    flex-basis: 180px;
+  }
+}
+@media (max-width: 767px) {
+  .discovery-heading {
+    display: block;
+  }
+  .discovery-trust-note {
+    margin-top: 22px;
+  }
+  .discovery-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .discovery-filters {
+    padding: 20px;
+  }
+}
+@media (max-width: 450px) {
+  .discovery-academic-fields,
+  .discovery-search-row,
+  .discovery-window {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .discovery-filter-actions > .button {
+    width: 100%;
+  }
+  .discovery-card {
+    padding: 20px;
+  }
+  .discovery-card-heading {
+    gap: 10px;
+  }
+  .discovery-card-heading h3 {
+    font-size: 25px;
+  }
+  .discovery-rank {
+    min-width: 36px;
+    height: 36px;
+  }
+}
