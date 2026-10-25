@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { testDiscoveryApi } from "./discovery-tests.mjs";
 import { testTutorApi } from "./tutor-tests.mjs";
 import { randomUUID, randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -30,7 +31,11 @@ const bundle = await build({
     lib: { entry: "scripts/auth/learner-entry.ts", formats: ["es"] },
   },
 });
-const { supabaseLearnerRepository, supabaseTutorRepository } = await import(
+const {
+  supabaseLearnerRepository,
+  supabaseTutorRepository,
+  supabaseDiscoveryRepository,
+} = await import(
   `data:text/javascript;base64,${Buffer.from((Array.isArray(bundle) ? bundle[0] : bundle).output[0].code).toString("base64")}`
 );
 const config = localConfig();
@@ -476,6 +481,25 @@ try {
       );
       return client;
     },
+  });
+  await testDiscoveryApi({
+    discoveryRepo: supabaseDiscoveryRepository,
+    tutorRepo: supabaseTutorRepository,
+    learner: relogged.client,
+    otherLearner: signed[5].client,
+    tutor,
+    otherTutor: (await login(accounts[6])).client,
+    guardian,
+    champion: signed[3].client,
+    admin,
+    anonymous: transientClient(config.url, config.publicKey),
+    server,
+    db,
+    ownerId: ids[1],
+    otherId: ids[6],
+    reviewerId: ids[3],
+    config,
+    check,
   });
   await db.query(
     "update public.adult_test_accounts set enabled=false where user_id=$1",

@@ -62,6 +62,8 @@ export function setupAccount(role: Role = "tutor", restored = true) {
             required_role: "tutor",
             academic_grade: 12,
             revision: 1,
+            discovery_preview_enabled: false,
+            discovery_preview_id: "90000000-0000-4000-8000-000000000001",
             bio: "",
             teaching_skill_score: null,
             completed_sessions: 0,
@@ -149,19 +151,19 @@ export function setupAccount(role: Role = "tutor", restored = true) {
       }),
     },
     tutor: {
-      load: vi
-        .fn()
-        .mockImplementation(async () => ({
-          profile: data.tutor_profiles,
-          availability: [],
-          subjects: [],
-          languages: [],
-          verification: [],
-        })),
+      load: vi.fn().mockImplementation(async () => ({
+        profile: data.tutor_profiles,
+        availability: [],
+        subjects: [],
+        languages: [],
+        verification: [],
+      })),
       saveBio: vi.fn(),
+      setDiscoveryPreview: vi.fn(),
       saveAvailability: vi.fn(),
       deleteAvailability: vi.fn(),
     },
+    discovery: { search: vi.fn() },
     learner: {
       progress: vi.fn().mockResolvedValue([]),
       bookmarks: vi.fn().mockResolvedValue([]),

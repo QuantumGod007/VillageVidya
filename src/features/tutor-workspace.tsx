@@ -467,7 +467,7 @@ export function TutorContent({
                 </div>
               </dl>
               <Biography
-                key={data.profile.revision}
+                key={data.profile.bio}
                 profile={data.profile}
                 disabled={disabled}
                 pending={ws.pending === "bio"}
@@ -500,6 +500,54 @@ export function TutorContent({
                 </div>
               </section>
             )
+          )}
+          {settings && (
+            <section className="role-section">
+              <div className="role-section-title">
+                <h2>Adult-only discovery preview</h2>
+              </div>
+              <p>
+                Your matching-preview ID:{" "}
+                <strong>
+                  Test tutor {data.profile.discovery_preview_id?.slice(0, 8)}
+                </strong>
+              </p>
+              <p className="small muted">
+                Opt in to let provisioned adult learner test accounts see this
+                pseudonym, your eligible grade, stored teaching score, matching
+                qualifications and whether a weekly preference covers their
+                chosen time. Your name, biography, email, private intervals and
+                review evidence stay private. Opting in does not approve
+                verification or enable bookings.
+              </p>
+              <p>
+                {data.profile.discovery_preview_enabled
+                  ? "Preview preference enabled. Trusted eligibility checks still apply."
+                  : "Preview preference disabled. You will not appear in learner discovery."}
+              </p>
+              <Button
+                variant="outline"
+                disabled={disabled}
+                aria-busy={ws.pending === "preview"}
+                onClick={() =>
+                  void ws.mutate(
+                    "preview",
+                    () =>
+                      access.tutor.setDiscoveryPreview(
+                        !data.profile.discovery_preview_enabled,
+                        data.profile.revision,
+                      ),
+                    "Adult test preview preference saved. Real tutoring remains closed.",
+                  )
+                }
+              >
+                {ws.pending === "preview"
+                  ? "Saving preview preference…"
+                  : data.profile.discovery_preview_enabled
+                    ? "Leave adult test preview"
+                    : "Join adult test preview"}
+              </Button>
+            </section>
           )}
           {!feedback && (
             <section className="role-section">

@@ -14,11 +14,16 @@ const TutorWorkspace = lazy(() =>
   import("./tutor-workspace").then((m) => ({ default: m.TutorWorkspace })),
 );
 
+const TutorDiscovery = lazy(() =>
+  import("./tutor-discovery").then((m) => ({ default: m.TutorDiscovery })),
+);
+
 // Account pages never mount fictional feature components. They use the shared
 // authenticated repositories and truthful release states until later phases.
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (pathname === "/tutors") return <TutorDiscovery />;
   if (
     role === "tutor" &&
     ["/studio", "/settings", "/studio/feedback"].includes(pathname)
