@@ -181,3 +181,10 @@ export function currentDestination(role: Role, pathname: string, hash: string) {
     destinationIsActive(item.to, pathname, hash),
   );
 }
+
+export const testSafetyDestination: WorkspaceDestination = {
+  to: "/safety",
+  label: "Test Safety Reports",
+  group: "Account",
+  icon: Flag,
+};

@@ -28,6 +28,7 @@ import {
   workspaceNavigation,
   destinationIsActive,
   currentDestination,
+  testSafetyDestination,
 } from "./workspace-navigation";
 export function Layout() {
   const [menu, setMenu] = useState(false);
@@ -304,18 +305,20 @@ export function Workspace() {
     "/explore": translated.learn,
     "/tutors": translated.tutors,
   };
-  const destinations = workspaceNavigation[role ?? "learner"].map((item) =>
+  const destinations = [
+    ...workspaceNavigation[role ?? "learner"],
+    ...(real ? [testSafetyDestination] : []),
+  ].map((item) =>
     role === "learner" &&
     language !== "English" &&
     existingTranslations[item.to]
       ? { ...item, label: existingTranslations[item.to] }
       : item,
   );
-  const active = currentDestination(
-    role ?? "learner",
-    location.pathname,
-    location.hash,
-  );
+  const active =
+    real && location.pathname === "/safety"
+      ? testSafetyDestination
+      : currentDestination(role ?? "learner", location.pathname, location.hash);
   const title = location.pathname.startsWith("/lesson/")
     ? "Lesson"
     : location.pathname.startsWith("/room/")

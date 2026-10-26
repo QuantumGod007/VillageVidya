@@ -1,3 +1,4 @@
+import { supabaseTrustRepository } from "./trust-repository";
 import { supabaseDiscoveryRepository } from "./discovery-repository";
 import { supabaseTutorRepository } from "./tutor-repository";
 import { createClient } from "@supabase/supabase-js";
@@ -35,5 +36,6 @@ export function createDataAccess(options: unknown) {
     learner: supabaseLearnerRepository(client),
     tutor: supabaseTutorRepository(client),
     discovery: supabaseDiscoveryRepository(client),
+    trust: supabaseTrustRepository(client),
   };
 }

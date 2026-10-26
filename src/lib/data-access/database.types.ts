@@ -374,6 +374,7 @@ export type Database = {
           learner_id: string;
           reviewed_at: string | null;
           reviewed_by: string | null;
+          revision: number;
           status: Database["public"]["Enums"]["review_status"];
           updated_at: string;
         };
@@ -386,6 +387,7 @@ export type Database = {
           learner_id: string;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          revision?: number;
           status?: Database["public"]["Enums"]["review_status"];
           updated_at?: string;
         };
@@ -397,6 +399,7 @@ export type Database = {
           learner_id?: string;
           reviewed_at?: string | null;
           reviewed_by?: string | null;
+          revision?: number;
           status?: Database["public"]["Enums"]["review_status"];
           updated_at?: string;
         };
@@ -713,6 +716,147 @@ export type Database = {
         };
         Relationships: [];
       };
+      test_safety_actions: {
+        Row: {
+          action_note: string;
+          actor_id: string;
+          created_at: string;
+          event_number: number;
+          from_status: Database["public"]["Enums"]["test_safety_status"] | null;
+          id: string;
+          report_id: string;
+          to_status: Database["public"]["Enums"]["test_safety_status"];
+        };
+        ComputedFields: never;
+        Insert: {
+          action_note: string;
+          actor_id: string;
+          created_at?: string;
+          event_number?: never;
+          from_status?:
+            Database["public"]["Enums"]["test_safety_status"] | null;
+          id?: string;
+          report_id: string;
+          to_status: Database["public"]["Enums"]["test_safety_status"];
+        };
+        Update: {
+          action_note?: string;
+          actor_id?: string;
+          created_at?: string;
+          event_number?: never;
+          from_status?:
+            Database["public"]["Enums"]["test_safety_status"] | null;
+          id?: string;
+          report_id?: string;
+          to_status?: Database["public"]["Enums"]["test_safety_status"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_safety_actions_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_safety_actions_report_id_fkey";
+            columns: ["report_id"];
+            isOneToOne: false;
+            referencedRelation: "test_safety_reports";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      test_safety_reports: {
+        Row: {
+          category: string;
+          created_at: string;
+          id: string;
+          reporter_id: string;
+          revision: number;
+          status: Database["public"]["Enums"]["test_safety_status"];
+          submission_id: string;
+          summary: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          category: string;
+          created_at?: string;
+          id?: string;
+          reporter_id: string;
+          revision?: number;
+          status?: Database["public"]["Enums"]["test_safety_status"];
+          submission_id: string;
+          summary: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          id?: string;
+          reporter_id?: string;
+          revision?: number;
+          status?: Database["public"]["Enums"]["test_safety_status"];
+          submission_id?: string;
+          summary?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_safety_reports_reporter_id_fkey";
+            columns: ["reporter_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      test_trust_audit: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          operation: string;
+          reason: string;
+          request_id: string;
+          request_payload: NonNullable<Json>;
+          result_id: string;
+          subject_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id?: string;
+          operation: string;
+          reason: string;
+          request_id: string;
+          request_payload: NonNullable<Json>;
+          result_id: string;
+          subject_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          operation?: string;
+          reason?: string;
+          request_id?: string;
+          request_payload?: NonNullable<Json>;
+          result_id?: string;
+          subject_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_trust_audit_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tutor_availability: {
         Row: {
           created_at: string;
@@ -886,6 +1030,52 @@ export type Database = {
           },
         ];
       };
+      tutor_test_evidence: {
+        Row: {
+          created_at: string;
+          event_number: number;
+          id: string;
+          label: string;
+          note: string;
+          prepared_by: string;
+          tutor_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          event_number?: never;
+          id?: string;
+          label?: string;
+          note: string;
+          prepared_by: string;
+          tutor_id: string;
+        };
+        Update: {
+          created_at?: string;
+          event_number?: never;
+          id?: string;
+          label?: string;
+          note?: string;
+          prepared_by?: string;
+          tutor_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tutor_test_evidence_prepared_by_fkey";
+            columns: ["prepared_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tutor_test_evidence_tutor_id_fkey";
+            columns: ["tutor_id"];
+            isOneToOne: false;
+            referencedRelation: "tutor_profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       tutor_verification_records: {
         Row: {
           created_at: string;
@@ -996,6 +1186,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      load_test_trust_history: {
+        Args: { p_before_event?: number; p_kind: string; p_subject_id: string };
+        Returns: Json;
+      };
+      load_test_trust_workspace: { Args: { p_query?: string }; Returns: Json };
+      read_linked_test_learner: {
+        Args: { p_relationship_id: string };
+        Returns: Json;
+      };
       record_learner_reading: {
         Args: { p_lesson_id: string; p_mark_read?: boolean };
         Returns: {
@@ -1010,6 +1209,48 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
+      };
+      record_test_consent: {
+        Args: {
+          p_expected_event: number;
+          p_grant: boolean;
+          p_reason: string;
+          p_relationship_id: string;
+          p_request_id: string;
+        };
+        Returns: string;
+      };
+      review_test_relationship: {
+        Args: {
+          p_guardian_id: string;
+          p_learner_id: string;
+          p_reason: string;
+          p_request_id: string;
+          p_revision: number;
+          p_status: Database["public"]["Enums"]["review_status"];
+        };
+        Returns: string;
+      };
+      review_test_safety_report: {
+        Args: {
+          p_note: string;
+          p_report_id: string;
+          p_request_id: string;
+          p_revision: number;
+          p_status: Database["public"]["Enums"]["test_safety_status"];
+        };
+        Returns: string;
+      };
+      review_test_tutor: {
+        Args: {
+          p_grade: number;
+          p_reason: string;
+          p_request_id: string;
+          p_status: Database["public"]["Enums"]["review_status"];
+          p_token: string;
+          p_tutor_id: string;
+        };
+        Returns: string;
       };
       save_tutor_availability: {
         Args: {
@@ -1083,6 +1324,14 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      submit_test_safety_report: {
+        Args: {
+          p_category: string;
+          p_submission_id: string;
+          p_summary: string;
+        };
+        Returns: string;
+      };
       switch_learner_enrollment: {
         Args: {
           p_language: Database["public"]["Enums"]["learning_language"];
@@ -1111,6 +1360,7 @@ export type Database = {
       learning_language: "English" | "हिन्दी" | "मराठी" | "తెలుగు";
       review_status: "pending" | "approved" | "rejected" | "revoked";
       subject_name: "Mathematics" | "Science" | "English" | "Social Science";
+      test_safety_status: "submitted" | "under_review" | "resolved" | "closed";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1243,6 +1493,7 @@ export const Constants = {
       learning_language: ["English", "हिन्दी", "मराठी", "తెలుగు"],
       review_status: ["pending", "approved", "rejected", "revoked"],
       subject_name: ["Mathematics", "Science", "English", "Social Science"],
+      test_safety_status: ["submitted", "under_review", "resolved", "closed"],
     },
   },
 } as const;

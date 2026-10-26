@@ -163,6 +163,39 @@ export function setupAccount(role: Role = "tutor", restored = true) {
       saveAvailability: vi.fn(),
       deleteAvailability: vi.fn(),
     },
+    trust: {
+      load: vi
+        .fn()
+        .mockImplementation(async () => ({
+          test_only: true,
+          as_of: new Date().toISOString(),
+          staff: role === "champion" || role === "admin",
+          administrator: role === "admin",
+          tutor_reviews: [],
+          relationships: [],
+          reports: [],
+          safety_queue: [],
+          accounts: [],
+          recent_actions: [],
+          more: {
+            tutors: false,
+            relationships: false,
+            reports: false,
+            safety: false,
+            accounts: false,
+            actions: false,
+          },
+        })),
+      history: vi
+        .fn()
+        .mockResolvedValue({ records: [], more: false, next_before: null }),
+      learner: vi.fn(),
+      reviewTutor: vi.fn(),
+      relationship: vi.fn(),
+      consent: vi.fn(),
+      submitReport: vi.fn(),
+      reviewReport: vi.fn(),
+    },
     discovery: { search: vi.fn() },
     learner: {
       progress: vi.fn().mockResolvedValue([]),

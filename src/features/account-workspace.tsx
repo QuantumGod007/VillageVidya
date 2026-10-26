@@ -18,11 +18,21 @@ const TutorDiscovery = lazy(() =>
   import("./tutor-discovery").then((m) => ({ default: m.TutorDiscovery })),
 );
 
+const TrustWorkspace = lazy(() =>
+  import("./trust-workspace").then((m) => ({ default: m.TrustWorkspace })),
+);
+
 // Account pages never mount fictional feature components. They use the shared
 // authenticated repositories and truthful release states until later phases.
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (
+    ["/champion", "/guardian", "/admin", "/admin/users", "/safety"].includes(
+      pathname,
+    )
+  )
+    return <TrustWorkspace />;
   if (pathname === "/tutors") return <TutorDiscovery />;
   if (
     role === "tutor" &&
@@ -304,95 +314,6 @@ function OtherAccountWorkspace() {
             "Real matching and sessions remain disabled while child-safety and consent services are completed.",
           )}
         </>
-      ) : pathname === "/guardian" ? (
-        <>
-          {section(
-            "progress",
-            "Learner progress",
-            "Only independently approved relationships and consent can permit learner access. Real learner participation is closed.",
-          )}
-          <section className="role-section" id="consent" tabIndex={-1}>
-            <div className="role-section-title">
-              <h2>Guardian relationships</h2>
-            </div>
-            {account.relationships.length ? (
-              <ul className="role-activity-list">
-                {account.relationships.map((r) => (
-                  <li key={r.id}>
-                    <div>
-                      <strong>Relationship status: {r.status}</strong>
-                      <p>
-                        This relationship status alone does not establish active
-                        consent. No client-side approval is available.
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="role-empty-inline">
-                <div>
-                  <h3>No linked learner.</h3>
-                  <p>
-                    There is no verified guardian relationship attached to this
-                    account. Fictional approvals do not carry over.
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-          {section(
-            "updates",
-            "Updates",
-            "No real learner updates are available.",
-          )}
-        </>
-      ) : pathname === "/champion" ? (
-        <>
-          {section(
-            "verification",
-            "Tutor verification",
-            "Verification requires a future trusted review service. This browser cannot mark a tutor verified.",
-          )}
-          {section(
-            "moderation",
-            "Moderation",
-            "No real community moderation queue is connected.",
-          )}
-          {section(
-            "reports",
-            "Safety reports",
-            "Reporting and case handling are not open for real participation.",
-          )}
-        </>
-      ) : pathname === "/admin" ? (
-        <>
-          <section className="role-next-action">
-            <div className="role-next-copy">
-              <Eyebrow>PLATFORM</Eyebrow>
-              <h2>Review the published catalog.</h2>
-              <p>
-                Your administrator role does not grant a browser service key or
-                bypass row-level security.
-              </p>
-              <ButtonLink to="/explore">View curriculum</ButtonLink>
-            </div>
-          </section>
-          {section(
-            "operations",
-            "Operations",
-            "Privileged user management and operational changes require future authorized server endpoints.",
-          )}
-        </>
-      ) : pathname === "/admin/users" ? (
-        <section className="role-section">
-          <h2>Server-controlled user administration</h2>
-          <p className="muted">
-            User management is not connected. Other accounts are protected by
-            RLS; the browser cannot list or promote them. Adult test accounts
-            are provisioned only through trusted local tooling.
-          </p>
-        </section>
       ) : (
         section(
           "unavailable",
