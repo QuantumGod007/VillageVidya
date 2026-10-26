@@ -180,7 +180,7 @@ try {
     .getByRole("button", { name: "Submit test report", exact: true })
     .click();
   await expect(
-    learner.locator(".trust-card").filter({ hasText: summary }),
+    learner.locator("article.trust-card").filter({ hasText: summary }),
   ).toBeVisible();
   await champion.goto("http://127.0.0.1:5175/champion#reports");
   await ready(champion);
@@ -207,7 +207,7 @@ try {
   await ready(learner);
   await expect(
     learner
-      .locator(".trust-card")
+      .locator("article.trust-card")
       .filter({ hasText: summary })
       .locator(".trust-status"),
   ).toHaveText("Closed");
