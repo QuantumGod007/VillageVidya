@@ -11,6 +11,48 @@ async function ready() {
   );
 }
 describe("authenticated booking interfaces (transport fixtures; real API/browser tests enforce security)", () => {
+  it("discards a previous account's late mutation result without starting another read", async () => {
+    const f = bookingFixture("tutor"),
+      user = userEvent.setup();
+    let finish!: (value: string) => void;
+    vi.mocked(f.repository.respond).mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          finish = done;
+        }),
+    );
+    openAccount(f.access, "/sessions");
+    await ready();
+    await user.click(
+      screen.getByRole("button", { name: "Accept test request" }),
+    );
+    const reads = vi.mocked(f.repository.load).mock.calls.length;
+    await act(async () => f.emit("SIGNED_OUT", null));
+    await act(async () => finish(bookingIds.session));
+    expect(f.repository.load).toHaveBeenCalledTimes(reads);
+    expect(
+      screen.queryByText("Synthetic fractions practice"),
+    ).not.toBeInTheDocument();
+  });
+  it("stops polling while its document is hidden", async () => {
+    const f = bookingFixture();
+    openAccount(f.access, "/sessions");
+    await ready();
+    const reads = vi.mocked(f.repository.load).mock.calls.length;
+    const visibility = vi
+      .spyOn(document, "visibilityState", "get")
+      .mockReturnValue("hidden");
+    vi.useFakeTimers();
+    await act(async () => vi.advanceTimersByTimeAsync(15_000));
+    expect(f.repository.load).toHaveBeenCalledTimes(reads);
+    visibility.mockReturnValue("visible");
+    await act(async () =>
+      document.dispatchEvent(new Event("visibilitychange")),
+    );
+    expect(f.repository.load).toHaveBeenCalledTimes(reads + 1);
+    visibility.mockRestore();
+    vi.useRealTimers();
+  });
   it("shows genuine server requests and participant actions without fictional appointments", async () => {
     const f = bookingFixture();
     openAccount(f.access, "/sessions");

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { testBookingApi } from "./booking-tests.mjs";
 import {
   prepareClassroom,
   exerciseClassroom,
@@ -609,9 +610,6 @@ try {
       "classroom cleanup removes only the disposable batch",
     );
   }
-  console.log(
-    `Real Supabase Auth/API integration passed: ${assertions} checks. No real child registration or tutoring was enabled.`,
-  );
 } finally {
   for (const client of clients) await client.auth.signOut().catch(() => {});
   // Test-only cleanup of explicitly disposable evidence; service API cannot erase audit history.
@@ -632,3 +630,8 @@ try {
   }
   await db.end();
 }
+if (process.exitCode) throw new Error("Earlier Auth fixture cleanup failed.");
+await testBookingApi(config, check);
+console.log(
+  `Real Supabase Auth/API integration passed: ${assertions} checks. No real child registration or tutoring was enabled.`,
+);

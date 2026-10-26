@@ -122,8 +122,8 @@ declare actor uuid:=private.require_test_role(array['learner','tutor']::public.a
       'tutor_label','Test tutor '||left(tp.discovery_preview_id::text,8),'learner_label','Adult learner '||left(r.learner_id::text,8),
       'subject_id',r.subject_id,'subject',sub.name,'language',r.language,'starts_at',r.starts_at,'ends_at',r.ends_at,'topic',r.topic,
       'created_at',r.created_at,'updated_at',r.updated_at,'expires_at',r.expires_at,'search_expires_at',r.search_started_at+interval '90 seconds',
-      'status',private.effective_request_status(r),'revision',r.revision,'session_id',r.session_id,
-      'can_fallback',actor=r.learner_id and private.effective_request_status(r) in('expired','declined') and v_now<r.search_started_at+interval '90 seconds'
+      'status',case when r.status='pending' and v_now>=r.expires_at then 'expired'::public.test_request_status else r.status end,'revision',r.revision,'session_id',r.session_id,
+      'can_fallback',actor=r.learner_id and (r.status in('expired','declined') or (r.status='pending' and v_now>=r.expires_at)) and v_now<r.search_started_at+interval '90 seconds'
         and not exists(select 1 from public.test_tutor_requests child where child.previous_request_id=r.id)
     ) item from public.test_tutor_requests r join public.tutor_profiles tp on tp.user_id=r.tutor_id join public.academic_subjects sub on sub.id=r.subject_id
     where actor in(r.learner_id,r.tutor_id) and (p_record_id is null or r.id=p_record_id or r.session_id=p_record_id) order by r.created_at desc,r.id limit 51
@@ -132,7 +132,7 @@ declare actor uuid:=private.require_test_role(array['learner','tutor']::public.a
     select jsonb_build_object('id',s.id,'request_id',s.request_id,'viewer_role',case when actor=s.learner_id then 'learner' else 'tutor' end,
       'tutor_label','Test tutor '||left(tp.discovery_preview_id::text,8),'learner_label','Adult learner '||left(s.learner_id::text,8),
       'subject_id',s.subject_id,'subject',sub.name,'language',s.language,'starts_at',s.starts_at,'ends_at',s.ends_at,
-      'status',private.effective_session_status(s),'revision',s.revision,'started_at',s.started_at,'completed_at',s.completed_at,'cancelled_at',s.cancelled_at,'summary',s.summary,
+      'status',case when (s.status='scheduled' and v_now>=s.ends_at) or (s.status='active' and v_now>=s.ends_at+interval '15 minutes') then 'missed'::public.test_session_status else s.status end,'revision',s.revision,'started_at',s.started_at,'completed_at',s.completed_at,'cancelled_at',s.cancelled_at,'summary',s.summary,
       'history',coalesce((select jsonb_agg(jsonb_build_object('event_number',e.event_number,'status',e.to_status,'actor_role',case when e.actor_id=s.learner_id then 'learner' else 'tutor' end,'created_at',e.created_at,'note',e.note) order by e.event_number)
         from public.test_booking_events e where e.session_id=s.id),'[]')
     ) item from public.test_scheduled_sessions s join public.tutor_profiles tp on tp.user_id=s.tutor_id join public.academic_subjects sub on sub.id=s.subject_id
