@@ -1,4 +1,4 @@
-select pg_temp.assert_true((select count(*)=27 and bool_and(relrowsecurity and relforcerowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and relkind='r'), 'all 27 application tables enforce RLS');
+select pg_temp.assert_true((select count(*)=30 and bool_and(relrowsecurity and relforcerowsecurity) from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and relkind='r'), 'all 30 application tables enforce RLS');
 select pg_temp.assert_true((select count(*)=8 from public.lessons where language='English' and content_origin='original_practice'), 'eight original English lessons');
 select pg_temp.assert_true((select count(*)=8 from public.assessments), 'one checkpoint per original lesson');
 select pg_temp.assert_true((select count(*)=14 from public.academic_grades), 'both boards support Grades 4–10');
