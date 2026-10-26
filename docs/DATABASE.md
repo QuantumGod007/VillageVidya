@@ -104,7 +104,7 @@ With the isolated local Auth stack running and migrated:
 
 ```sh
 npm run auth:test
-npx playwright install --with-deps chromium
+npx playwright install --with-deps --only-shell chromium
 npm run auth:test:browser
 # Optional manual classroom; creates no approvals, relationships or consent:
 VV_ADULT_TEST_ACCOUNT=true VV_SYNTHETIC_CLASSROOM=true npm run demo:prepare

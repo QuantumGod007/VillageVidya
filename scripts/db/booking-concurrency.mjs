@@ -32,7 +32,27 @@ export async function testBookingConcurrency(connectionString) {
       await c.end();
     }
   }
-  let start, pendingAcceptance;
+  let start, pendingAcceptance, pendingSnapshot;
+  async function waitForLock(application) {
+    const deadline = Date.now() + 3_000;
+    while (true) {
+      await db.query("select pg_stat_clear_snapshot()");
+      if (
+        (
+          await db.query(
+            "select exists(select 1 from pg_stat_activity where application_name=$1 and wait_event_type='Lock') v",
+            [application],
+          )
+        ).rows[0].v
+      )
+        return;
+      assert.ok(
+        Date.now() < deadline,
+        "the concurrent operation must actually wait on its database lock",
+      );
+      await new Promise((done) => setTimeout(done, 10));
+    }
+  }
   const request = (actor, tutor, begins = start, intent = randomUUID()) =>
     run(
       actor,
@@ -131,6 +151,31 @@ export async function testBookingConcurrency(connectionString) {
     );
     assert.equal(new Set(duplicate).size, 1);
     const acceptIntent = randomUUID();
+    // Freeze a read before acceptance commits. One RPC must not combine an old
+    // pending request with a newly committed scheduled session.
+    await db.query("begin");
+    await db.query(
+      "lock table public.test_tutor_requests in access exclusive mode",
+    );
+    pendingSnapshot = run("learner", "select public.load_test_bookings($1) v", [
+      duplicate[0],
+    ]).then(
+      (value) => ({ value }),
+      (error) => ({ error }),
+    );
+    await waitForLock("vv-booking-learner");
+    await db.query("set local role authenticated");
+    await db.query("select set_config('request.jwt.claims',$1,true)", [
+      JSON.stringify({ sub: ids.tutor, session_id: ids.tutor }),
+    ]);
+    await db.query("select public.respond_test_request($1,1,'accept',$2)", [
+      duplicate[0],
+      acceptIntent,
+    ]);
+    await db.query("commit");
+    const priorView = (await pendingSnapshot).value;
+    assert.equal(priorView.requests[0].status, "pending");
+    assert.equal(priorView.sessions.length, 0);
     const accepted = await Promise.all(
       Array.from({ length: 6 }, () =>
         respond("tutor", duplicate[0], "accept", acceptIntent),
@@ -190,21 +235,7 @@ export async function testBookingConcurrency(connectionString) {
       (error) => ({ error }),
     );
     pendingAcceptance = blocked;
-    const lockDeadline = Date.now() + 3_000;
-    while (
-      !(
-        await db.query(
-          "select exists(select 1 from pg_stat_activity where application_name='vv-booking-tutor' and wait_event_type='Lock') v",
-        )
-      ).rows[0].v
-    ) {
-      assert.ok(
-        Date.now() < lockDeadline,
-        "acceptance must actually wait on the tutor profile lock",
-      );
-      await new Promise((done) => setTimeout(done, 10));
-      await db.query("select pg_stat_clear_snapshot()");
-    }
+    await waitForLock("vv-booking-tutor");
     await db.query(
       "insert into public.tutor_verification_records(tutor_id,status,reviewed_by,decision_note) values($1,'revoked',$2,'ADULT TEST: revoke during acceptance contention.')",
       [ids.tutor, ids.champion],
@@ -237,11 +268,12 @@ export async function testBookingConcurrency(connectionString) {
       { code: "23P01" },
     );
     console.log(
-      "PASS booking concurrency: duplicate request/acceptance, competing learners, learner overlap, accept/cancel, revocation, complete/cancel and SQL exclusion constraints",
+      "PASS booking concurrency: consistent read snapshot, duplicate request/acceptance, competing learners, learner overlap, accept/cancel, revocation, complete/cancel and SQL exclusion constraints",
     );
   } finally {
     await db.query("rollback");
     if (pendingAcceptance) await pendingAcceptance;
+    if (pendingSnapshot) await pendingSnapshot;
     await db.query("begin");
     await cleanupTestBookings(db, all);
     await db.query(

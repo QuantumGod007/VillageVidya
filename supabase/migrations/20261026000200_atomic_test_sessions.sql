@@ -114,7 +114,7 @@ begin
 end $$;
 
 create function public.load_test_bookings(p_record_id uuid default null) returns jsonb
-language plpgsql security definer set search_path='' as $$
+language plpgsql stable security definer set search_path='' as $$
 declare actor uuid:=private.require_test_role(array['learner','tutor']::public.app_role[]); requests jsonb; sessions jsonb; v_now timestamptz:=clock_timestamp(); begin
   if p_record_id is not null and not exists(select 1 from public.test_tutor_requests r where actor in(r.learner_id,r.tutor_id) and (r.id=p_record_id or r.session_id=p_record_id)) then raise exception 'Booking unavailable' using errcode='42501'; end if;
   select coalesce(jsonb_agg(item),'[]') into requests from (

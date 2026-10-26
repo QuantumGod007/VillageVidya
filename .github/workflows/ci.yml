@@ -51,7 +51,7 @@ jobs:
       - run: npm run db:types:check
       - run: npm run auth:test
       - name: Install Chromium for authenticated browser checks
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps --only-shell chromium
       - name: Real Supabase workspace browser smoke tests
         run: npm run auth:test:browser
       - name: Local gateway diagnostics on failure
