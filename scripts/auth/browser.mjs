@@ -93,7 +93,7 @@ try {
     ["revoked", "Revoked"],
   ]) {
     await tutor
-      .getByLabel("Test decision", { exact: true })
+      .getByRole("combobox", { name: "Test decision", exact: true })
       .selectOption(decision);
     await tutor
       .getByLabel("Decision reason", { exact: true })
@@ -192,7 +192,7 @@ try {
     ["closed", "Closed"],
   ]) {
     await report
-      .getByLabel("Next report status", { exact: true })
+      .getByRole("combobox", { name: "Next report status", exact: true })
       .selectOption(status);
     await report
       .getByLabel("Private review action", { exact: true })
