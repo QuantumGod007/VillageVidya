@@ -34,7 +34,7 @@ create table public.test_safety_actions (
   from_status public.test_safety_status, to_status public.test_safety_status not null,
   action_note text not null check(length(trim(action_note)) between 10 and 500),
   created_at timestamptz not null default now(),
-  check ((from_status is null and to_status='submitted') or (from_status='submitted' and to_status='under_review') or (from_status='under_review' and to_status in ('resolved','closed')))
+  check ((from_status is null and to_status='submitted') or (from_status is not null and ((from_status='submitted' and to_status='under_review') or (from_status='under_review' and to_status in ('resolved','closed')))))
 );
 create index test_safety_actions_history_idx on public.test_safety_actions(report_id,event_number desc);
 alter table public.guardian_relationships add column revision integer not null default 1 check(revision>0);
@@ -56,6 +56,21 @@ revoke all on sequence public.tutor_test_evidence_event_number_seq,public.test_s
 grant select on public.test_safety_reports to authenticated;
 create policy own_test_report on public.test_safety_reports for select to authenticated using(reporter_id=(select auth.uid()));
 create policy live_adult_account on public.test_safety_reports as restrictive to authenticated using((select private.account_session_active()));
+
+-- The API must enforce confirmed identities even if a previously issued JWT
+-- remains valid after trusted administration removes email confirmation.
+create or replace function private.account_session_active() returns boolean
+language sql stable security definer set search_path='' as $$
+  select exists (
+    select 1 from auth.sessions s
+    join public.adult_test_accounts a on a.user_id=s.user_id and a.enabled
+    join auth.users u on u.id=s.user_id
+    where s.id::text=(select auth.jwt()->>'session_id') and s.user_id=(select auth.uid())
+      and u.email_confirmed_at is not null
+      and (s.not_after is null or s.not_after>now())
+      and (u.banned_until is null or u.banned_until<=now())
+  );
+$$;
 
 create function private.require_test_role(allowed public.app_role[]) returns uuid
 language plpgsql security invoker set search_path='' as $$

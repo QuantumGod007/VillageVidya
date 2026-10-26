@@ -50,6 +50,10 @@ jobs:
         run: npm run db:reset && npm run db:test
       - run: npm run db:types:check
       - run: npm run auth:test
+      - name: Install Chromium for authenticated browser checks
+        run: npx playwright install --with-deps chromium
+      - name: Real Supabase workspace browser smoke tests
+        run: npm run auth:test:browser
       - name: Local gateway diagnostics on failure
         if: failure()
         run: |

@@ -15,18 +15,59 @@ describe("authenticated trust interfaces (transport fixtures; SQL/Auth tests enf
     "focuses Champion #%s after records load",
     async (hash) => {
       const f = trustFixture();
+      let resolve!: (v: typeof f.records) => void;
+      vi.mocked(f.access.trust.load).mockImplementationOnce(
+        () =>
+          new Promise((r) => {
+            resolve = r;
+          }),
+      );
       openAccount(f.access, `/champion#${hash}`);
+      await screen.findByText("Loading current trust records…");
+      expect(document.getElementById(hash)).toBeNull();
+      await act(async () => resolve(structuredClone(f.records)));
       await ready();
-      expect(document.getElementById(hash)).toHaveFocus();
+      // Button state is committed before passive focus effects necessarily run.
+      // Observe focus itself rather than assuming the enabled button signals it.
+      await waitFor(() => expect(document.getElementById(hash)).toHaveFocus());
     },
   );
+  it("honours the latest hash during a pending load and does not steal focus on refresh", async () => {
+    const f = trustFixture();
+    const user = userEvent.setup();
+    let resolve!: (v: typeof f.records) => void;
+    vi.mocked(f.access.trust.load).mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    openAccount(f.access, "/champion#verification");
+    await screen.findByText("Loading current trust records…");
+    await user.click(
+      within(
+        screen.getByRole("navigation", { name: "Workspace navigation" }),
+      ).getByRole("link", { name: "Safety Reports" }),
+    );
+    await act(async () => resolve(structuredClone(f.records)));
+    await waitFor(() =>
+      expect(document.getElementById("reports")).toHaveFocus(),
+    );
+    const input = screen.getByLabelText(
+      "Narrow review lists by account or record ID",
+    );
+    await user.click(input);
+    await act(async () => window.dispatchEvent(new Event("focus")));
+    await ready();
+    expect(input).toHaveFocus();
+  });
   it.each(["progress", "consent", "updates"])(
     "focuses guardian #%s after records load",
     async (hash) => {
       const f = trustFixture("guardian");
       openAccount(f.access, `/guardian#${hash}`);
       await ready();
-      expect(document.getElementById(hash)).toHaveFocus();
+      await waitFor(() => expect(document.getElementById(hash)).toHaveFocus());
     },
   );
   it("requires a reason and explicit confirmation, locks duplicate clicks, then reloads authoritative status", async () => {

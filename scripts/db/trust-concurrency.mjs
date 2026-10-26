@@ -165,15 +165,36 @@ export async function testTrustConcurrency(connectionString) {
       );
     await link(0, "approved");
     let rel = (await workspace("guardian")).relationships[0];
-    const consent = (grant) =>
+    const consent = (
+      grant,
+      requestId = randomUUID(),
+      expectedEvent = rel.consent_event,
+    ) =>
       run("guardian", "select public.record_test_consent($1,$2,$3,$4,$5) v", [
         rel.id,
-        rel.consent_event,
+        expectedEvent,
         grant,
         "Explicit synthetic adult test consent choice.",
-        randomUUID(),
+        requestId,
       ]);
-    await consent(true);
+    const approvalRequest = randomUUID(),
+      competingRequest = randomUUID(),
+      pendingEvent = rel.consent_event;
+    const approvals = await Promise.allSettled([
+      consent(true, approvalRequest),
+      consent(true, competingRequest),
+    ]);
+    assert.equal(approvals.filter((r) => r.status === "fulfilled").length, 1);
+    assert.equal(
+      approvals.find((r) => r.status === "rejected").reason.code,
+      "40001",
+    );
+    // Capture the winning intent so an old successful delivery can race a fresh
+    // stale approval after withdrawal without recreating approved consent.
+    const cachedRequest =
+      approvals[0].status === "fulfilled" ? approvalRequest : competingRequest;
+    rel = (await workspace("guardian")).relationships[0];
+    const approvedEvent = rel.consent_event;
     await db.query(
       "update public.adult_test_accounts set enabled=false where user_id=$1",
       [ids.learner],
@@ -185,6 +206,42 @@ export async function testTrustConcurrency(connectionString) {
     rel = (await workspace("guardian")).relationships[0];
     assert.equal(rel.can_share, false);
     await consent(false); // withdrawal must remain possible when a linked target is disabled
+    const revoked = (await workspace("guardian")).relationships[0];
+    const deliveries = await Promise.allSettled([
+      consent(true, randomUUID(), approvedEvent),
+      consent(true, cachedRequest, pendingEvent),
+    ]);
+    assert.equal(deliveries[0].status, "rejected");
+    // A new stale approval is denied even before the revision check when the
+    // target is inactive. Cached replay returns its old audit ID, doing no write.
+    assert.equal(deliveries[0].reason.code, "42501");
+    assert.equal(deliveries[1].status, "fulfilled");
+    assert.deepEqual((await workspace("guardian")).relationships[0], revoked);
+    // With an active target, stale event rejection (rather than its access gate)
+    // still prevents a delayed approval from superseding withdrawal.
+    await db.query(
+      "update public.adult_test_accounts set enabled=true where user_id=$1",
+      [ids.learner],
+    );
+    const activeDeliveries = await Promise.allSettled([
+      consent(true, randomUUID(), approvedEvent),
+      consent(true, cachedRequest, pendingEvent),
+    ]);
+    assert.equal(activeDeliveries[0].status, "rejected");
+    assert.equal(activeDeliveries[0].reason.code, "40001");
+    assert.equal(activeDeliveries[1].status, "fulfilled");
+    assert.equal(
+      (await workspace("guardian")).relationships[0].consent_event,
+      revoked.consent_event,
+    );
+    await assert.rejects(
+      run("guardian", "select public.read_linked_test_learner($1) v", [rel.id]),
+      { code: "42501" },
+    );
+    await db.query(
+      "update public.adult_test_accounts set enabled=false where user_id=$1",
+      [ids.learner],
+    );
     await link(1, "revoked"); // likewise unlinking disabled participants
     await db.query(
       "update public.adult_test_accounts set enabled=true where user_id=$1",
@@ -222,7 +279,7 @@ export async function testTrustConcurrency(connectionString) {
       page1.records.length + page2.records.length,
     );
     console.log(
-      "PASS trust contention: one reviewer wins, current-session replay checks, metadata conflicts, inactive-target revocation/withdrawal, relink requires fresh consent, bounded history cursors",
+      "PASS trust contention: one reviewer/consent wins, replay cannot override withdrawal, current-session checks, metadata conflicts, inactive-target revocation/withdrawal, relink requires fresh consent, bounded history cursors",
     );
   } finally {
     await db.query(

@@ -592,8 +592,22 @@ try {
   const classroom = await prepareClassroom(config, { acknowledged: true });
   try {
     await exerciseClassroom(config, classroom, check);
+    await exerciseClassroom(config, classroom, check);
+    check(
+      true,
+      "same classroom batch supports a second complete Auth/API exercise",
+    );
   } finally {
     await cleanupClassroom(config, classroom);
+    check(
+      (
+        await db.query(
+          "select count(*)::int n from auth.users where id=any($1::uuid[])",
+          [Object.values(classroom.accounts).map((a) => a.id)],
+        )
+      ).rows[0].n === 0,
+      "classroom cleanup removes only the disposable batch",
+    );
   }
   console.log(
     `Real Supabase Auth/API integration passed: ${assertions} checks. No real child registration or tutoring was enabled.`,

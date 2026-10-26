@@ -28,10 +28,10 @@ export async function testTutorConcurrency(connectionString) {
       [id, rev, day, start, end],
     );
   try {
-    await admin.query("insert into auth.users(id,email) values($1,$2)", [
-      owner,
-      `vv-concurrency-${owner}@example.invalid`,
-    ]);
+    await admin.query(
+      "insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())",
+      [owner, `vv-concurrency-${owner}@example.invalid`],
+    );
     await admin.query(
       "insert into public.profiles(id,display_name) values($1,'Disposable adult tutor SQL fixture')",
       [owner],

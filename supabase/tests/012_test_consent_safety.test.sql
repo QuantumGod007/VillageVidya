@@ -13,6 +13,9 @@ select pg_temp.expect_error($q$select public.record_test_consent('10000000-0000-
 select public.record_test_consent('10000000-0000-0000-0000-000000000001',(public.load_test_trust_workspace()#>>'{relationships,0,consent_event}')::bigint,false,'Adult test consent is explicitly withdrawn.',gen_random_uuid());
 select pg_temp.assert_true((select count(*)=0 from public.lesson_progress),'withdrawal immediately removes new private reads');
 select pg_temp.expect_error($q$select public.read_linked_test_learner('10000000-0000-0000-0000-000000000001')$q$,'42501','withdrawn linked read denied');
+select public.record_test_consent('10000000-0000-0000-0000-000000000001',(select event from consent_intent),true,'Explicit adult-test consent for the classroom.','82000000-0000-4000-8000-000000000001');
+select pg_temp.assert_true((select count(*)=0 from public.lesson_progress),'replaying old approval never reapplies it after withdrawal');
+select pg_temp.expect_error($q$select public.record_test_consent('10000000-0000-0000-0000-000000000001',(select event from consent_intent),true,'Explicit adult-test consent for the classroom.',gen_random_uuid())$q$,'40001','fresh request with stale approval event cannot undo withdrawal');
 select pg_temp.assert_true(public.load_test_trust_history('consent','10000000-0000-0000-0000-000000000001')#>>'{records,0,status}'='revoked','latest immutable consent is authoritative');
 select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000007","session_id":"00000000-0000-0000-0000-000000000007"}',true);
 select pg_temp.expect_error($q$select public.load_test_trust_history('consent','10000000-0000-0000-0000-000000000001')$q$,'42501','unrelated guardian cannot inspect consent history');
@@ -40,7 +43,26 @@ select pg_temp.assert_true(public.load_test_trust_workspace()#>>'{reports,0,stat
 select pg_temp.assert_true(public.load_test_trust_workspace()::text not like '%private operator note%','reporter projection excludes review evidence');
 select pg_temp.expect_error($q$select public.load_test_trust_history('safety',(select id from submitted_report))$q$,'42501','reporter cannot request private action history');
 reset role;
+
+-- Removing confirmation invalidates existing private API access, including
+-- already-issued staff sessions, without relying on a browser identity check.
+update auth.users set email_confirmed_at=null where id='00000000-0000-0000-0000-000000000005';
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000005","session_id":"00000000-0000-0000-0000-000000000005"}',true);
+select pg_temp.expect_error($q$select public.load_test_trust_workspace()$q$,'42501','unconfirmed existing reviewer session denied');
+select pg_temp.assert_true((select count(*)=0 from public.profiles),'unconfirmed session cannot bypass RPC through private table reads');
+reset role;
+update auth.users set email_confirmed_at=now() where id='00000000-0000-0000-0000-000000000005';
 update auth.users set banned_until=now()+interval '1 hour' where id='00000000-0000-0000-0000-000000000001';
 set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","session_id":"00000000-0000-0000-0000-000000000001"}',true);
 select pg_temp.expect_error($q$select public.submit_test_safety_report(gen_random_uuid(),'content','Banned account may not submit reports.')$q$,'42501','banned session denied');
+reset role;
+
+-- Even a trusted writer cannot append an impossible initial state. Service keys
+-- do not provide an alternate unaudited review-action insertion endpoint.
+select pg_temp.expect_error($q$insert into public.test_safety_actions(report_id,actor_id,to_status,action_note) values((select id from submitted_report),'00000000-0000-0000-0000-000000000005','resolved','Invalid initial transition must fail the constraint.')$q$,'23514','state constraint rejects null-to-terminal');
+set local role service_role;
+select pg_temp.assert_true(not has_table_privilege(current_user,'public.test_trust_audit','INSERT'),'service cannot forge new audit rows');
+select pg_temp.assert_true(not has_table_privilege(current_user,'public.test_safety_actions','INSERT'),'service cannot bypass the review state machine');
 reset role;

@@ -293,6 +293,21 @@ export async function exerciseClassroom(
       });
       row = await findReview();
     }
+    if (row.status !== "rejected") {
+      await repos.champion.reviewTutor({
+        tutorId,
+        token: row.token,
+        status: "rejected",
+        grade: null,
+        reason: "Synthetic classroom rejection before a fresh test review.",
+        requestId: randomUUID(),
+      });
+      row = await findReview();
+    }
+    check(
+      row.status === "rejected",
+      "Champion records a durable test rejection",
+    );
     const stale = row.token,
       approval = {
         tutorId,
@@ -314,8 +329,10 @@ export async function exerciseClassroom(
       "real Champion Auth session records the review identity and test approval",
     );
     check(
-      history.records.filter((e) => e.note.includes(approval.reason)).length ===
-        1,
+      history.records.filter(
+        (e) =>
+          e.event_number > row.last_event && e.note.includes(approval.reason),
+      ).length === 1,
       "duplicate review delivery produces one immutable event",
     );
     await assert.rejects(() =>
@@ -503,6 +520,19 @@ export async function exerciseClassroom(
         "revoked",
       "immutable consent history records latest withdrawal",
     );
+    await repos.guardian.consent(consent);
+    await assert.rejects(() => repos.guardian.learner(link.id));
+    await assert.rejects(() =>
+      repos.guardian.consent({
+        ...consent,
+        requestId: randomUUID(),
+      }),
+    );
+    check(
+      (await repos.guardian.history("consent", link.id)).records[0].status ===
+        "revoked",
+      "old consent replay and new stale approval cannot override withdrawal",
+    );
     link = (await repos.guardian.load()).relationships.find(
       (r) => r.id === link.id,
     );
@@ -638,6 +668,23 @@ export async function exerciseClassroom(
       }),
     );
     check(true, "staff cannot review their own safety report");
+    await db.query(
+      "update auth.users set email_confirmed_at=null where id=$1",
+      [manifest.accounts.champion.id],
+    );
+    try {
+      await assert.rejects(() => repos.champion.load());
+      check(
+        (await clients.champion.from("profiles").select("id")).data?.length ===
+          0,
+        "unconfirmed reviewer loses RPC and RLS access with an existing JWT",
+      );
+    } finally {
+      await db.query(
+        "update auth.users set email_confirmed_at=now() where id=$1",
+        [manifest.accounts.champion.id],
+      );
+    }
     await db.query(
       "update auth.users set banned_until=now()+interval '1 hour' where id=$1",
       [manifest.accounts.champion.id],
