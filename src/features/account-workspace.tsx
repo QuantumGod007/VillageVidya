@@ -21,12 +21,17 @@ const TutorDiscovery = lazy(() =>
 const TrustWorkspace = lazy(() =>
   import("./trust-workspace").then((m) => ({ default: m.TrustWorkspace })),
 );
+const SessionWorkspace = lazy(() =>
+  import("./session-workspace").then((m) => ({ default: m.SessionWorkspace })),
+);
 
 // Account pages never mount fictional feature components. They use the shared
 // authenticated repositories and truthful release states until later phases.
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (pathname === "/sessions" || pathname.startsWith("/room/"))
+    return <SessionWorkspace />;
   if (
     ["/champion", "/guardian", "/admin", "/admin/users", "/safety"].includes(
       pathname,

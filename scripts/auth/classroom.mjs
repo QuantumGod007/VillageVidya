@@ -6,6 +6,7 @@ import pg from "pg";
 import assert from "node:assert/strict";
 import { localConfig, transientClient } from "./local.mjs";
 import { provisionAdult } from "./provision.mjs";
+import { cleanupTestBookings } from "./booking-cleanup.mjs";
 const roles = ["learner", "tutor", "champion", "guardian", "admin"];
 export function assertClassroomLocal(config) {
   for (const value of [config.url, config.databaseUrl])
@@ -183,6 +184,7 @@ export async function cleanupClassroom(config, manifest) {
       "delete from public.tutor_verification_records where tutor_id=any($1::uuid[])",
       [ids],
     );
+    await cleanupTestBookings(db, ids);
     await db.query("delete from auth.users where id=any($1::uuid[])", [ids]);
     await db.query("commit");
   } catch (e) {

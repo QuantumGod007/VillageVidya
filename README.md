@@ -54,7 +54,7 @@ No real OTP, consent, physical verification, automated safety escalation, SMS de
 
 Local regex contact removal catches common phone numbers, email addresses, and web links. It is not full multilingual moderation, address detection, or production child protection. User-entered messages/questions/notes are never written to persistent browser storage.
 
-The Supabase PostgreSQL/RLS foundation now supports genuine sign-in, session refresh/recovery/sign-out and server-assigned roles for provisioned adult testers. Default demo mode remains separate; private account data requires a live Auth session and trusted test-access grant. Real learner registration and tutoring remain closed. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
+The Supabase PostgreSQL/RLS foundation now supports genuine sign-in, session refresh/recovery/sign-out and server-assigned roles for provisioned adult testers. Default demo mode remains separate; private account data requires a live Auth session and trusted test-access grant. Provisioned adult testers can also send persistent tutor requests, reserve non-overlapping intervals after independent tutor acceptance, and maintain shared session activity records. Real learner registration and tutoring remain closed. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
 
 ## Stack and structure
 
