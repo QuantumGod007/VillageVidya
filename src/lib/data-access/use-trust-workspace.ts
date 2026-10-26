@@ -2,7 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { RealAccess } from "../auth/provider";
 import type { TrustSnapshot } from "./trust-repository";
 import type { CurriculumCatalog } from "../../domain/curriculum";
-export function useTrustWorkspace(access: RealAccess, query: string) {
+export function useTrustWorkspace(
+  access: RealAccess,
+  query: string,
+  viewKey: string,
+) {
   const [data, setData] = useState<
     (TrustSnapshot & { catalog: CurriculumCatalog }) | null
   >(null);
@@ -13,6 +17,7 @@ export function useTrustWorkspace(access: RealAccess, query: string) {
   const generation = useRef(0),
     lifetime = useRef(0),
     locked = useRef(false);
+  const previousView = useRef(viewKey);
   const reload = useCallback(async () => {
     const req = ++generation.current;
     setLoading(true);
@@ -70,6 +75,14 @@ export function useTrustWorkspace(access: RealAccess, query: string) {
       window.removeEventListener("offline", offline);
     };
   }, [reload, invalidate]);
+  useEffect(() => {
+    if (previousView.current === viewKey) return;
+    previousView.current = viewKey;
+    // Hash navigation keeps this workspace mounted. Recheck records rather
+    // than showing a prior section's snapshot until the next polling tick.
+    // A pending mutation already owns the lock and reloads before completing.
+    if (!locked.current) void reload();
+  }, [viewKey, reload]);
   async function mutate(
     key: string,
     op: () => Promise<unknown>,

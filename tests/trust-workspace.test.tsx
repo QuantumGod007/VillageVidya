@@ -70,6 +70,47 @@ describe("authenticated trust interfaces (transport fixtures; SQL/Auth tests enf
       await waitFor(() => expect(document.getElementById(hash)).toHaveFocus());
     },
   );
+  it("loads newly administered relationships when navigating within the guardian workspace", async () => {
+    const f = trustFixture("guardian");
+    const links = f.records.relationships;
+    f.records.relationships = [];
+    const user = userEvent.setup();
+    openAccount(f.access, "/guardian");
+    await screen.findByText("No linked adult tester.");
+    f.records.relationships = links;
+    await user.click(
+      within(
+        screen.getByRole("navigation", { name: "Workspace navigation" }),
+      ).getByRole("link", { name: "Consent" }),
+    );
+    await screen.findByText("Consent: Approved test record");
+    expect(f.access.trust.load).toHaveBeenCalledTimes(2);
+  });
+  it("hides linked private data while navigation rechecks a consent withdrawal", async () => {
+    const f = trustFixture("guardian");
+    const user = userEvent.setup();
+    openAccount(f.access, "/guardian");
+    await screen.findByText("Linked adult learner");
+    f.records.relationships[0].can_share = false;
+    f.records.relationships[0].consent_status = "revoked";
+    let resolve!: (v: typeof f.records) => void;
+    vi.mocked(f.access.trust.load).mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    await user.click(
+      within(
+        screen.getByRole("navigation", { name: "Workspace navigation" }),
+      ).getByRole("link", { name: "Consent" }),
+    );
+    await screen.findByText("Loading current trust records…");
+    expect(screen.queryByText("Linked adult learner")).not.toBeInTheDocument();
+    await act(async () => resolve(structuredClone(f.records)));
+    await screen.findByText("Consent: Revoked");
+    expect(screen.queryByText("Linked adult learner")).not.toBeInTheDocument();
+  });
   it("requires a reason and explicit confirmation, locks duplicate clicks, then reloads authoritative status", async () => {
     const f = trustFixture();
     const user = userEvent.setup();

@@ -868,7 +868,7 @@ export function TrustContent({
   const safetyPage = pathname === "/safety";
   const [query, setQuery] = useState(""),
     [search, setSearch] = useState("");
-  const ws = useTrustWorkspace(access, search);
+  const ws = useTrustWorkspace(access, search, pathname + hash);
   const [confirmation, setConfirmation] = useState<Intent | null>(null);
   const errorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
