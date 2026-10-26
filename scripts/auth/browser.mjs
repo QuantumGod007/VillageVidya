@@ -112,10 +112,10 @@ try {
 
   await ready(admin);
   await admin
-    .getByLabel("Guardian test account ID", { exact: true })
+    .getByRole("combobox", { name: "Guardian test account ID", exact: true })
     .fill(manifest.accounts.guardian.id);
   await admin
-    .getByLabel("Learner test account ID", { exact: true })
+    .getByRole("combobox", { name: "Learner test account ID", exact: true })
     .fill(manifest.accounts.learner.id);
   await admin
     .getByLabel("Relationship decision reason", { exact: true })
