@@ -35,6 +35,7 @@ describe("authenticated booking interfaces (transport fixtures; real API/browser
     ).not.toBeInTheDocument();
   });
   it("stops polling while its document is hidden", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     const f = bookingFixture();
     openAccount(f.access, "/sessions");
     await ready();
@@ -42,7 +43,6 @@ describe("authenticated booking interfaces (transport fixtures; real API/browser
     const visibility = vi
       .spyOn(document, "visibilityState", "get")
       .mockReturnValue("hidden");
-    vi.useFakeTimers();
     await act(async () => vi.advanceTimersByTimeAsync(15_000));
     expect(f.repository.load).toHaveBeenCalledTimes(reads);
     visibility.mockReturnValue("visible");
@@ -50,8 +50,9 @@ describe("authenticated booking interfaces (transport fixtures; real API/browser
       document.dispatchEvent(new Event("visibilitychange")),
     );
     expect(f.repository.load).toHaveBeenCalledTimes(reads + 1);
+    await act(async () => vi.advanceTimersByTimeAsync(5_000));
+    expect(f.repository.load).toHaveBeenCalledTimes(reads + 2);
     visibility.mockRestore();
-    vi.useRealTimers();
   });
   it("shows genuine server requests and participant actions without fictional appointments", async () => {
     const f = bookingFixture();
