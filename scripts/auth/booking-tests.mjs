@@ -107,6 +107,11 @@ export async function testBookingApi(config, check) {
       a.books.learner.request(creation),
     ]);
     const requestId = duplicates[0];
+    await assert.rejects(() => a.books.learner.respond(response(requestId)));
+    check(
+      true,
+      "real learner cannot impersonate the tutor's acceptance action",
+    );
     check(
       new Set(duplicates).size === 1,
       "real request duplicate delivery shares one server ID",
@@ -277,6 +282,15 @@ export async function testBookingApi(config, check) {
       true,
       "revoked or no-longer-approved tutor cannot receive or accept test requests",
     );
+    await db.query(
+      "insert into public.tutor_verification_records(tutor_id,status,reviewed_by,decision_note) values($1,'pending',$2,'ADULT TEST ONLY: pending approval boundary fixture.')",
+      [a.manifest.accounts.tutor.id, a.manifest.accounts.champion.id],
+    );
+    await assert.rejects(() => a.books.tutor.respond(response(revoked)));
+    check(
+      true,
+      "latest pending approval also denies acceptance through real Auth/API",
+    );
     const disabled = await a.books.learner.request(input(b, 105));
     await db.query(
       "update public.adult_test_accounts set enabled=false where user_id=$1",
@@ -294,6 +308,30 @@ export async function testBookingApi(config, check) {
       await db.query(
         "update public.adult_test_accounts set enabled=true where user_id=$1",
         [a.manifest.accounts.learner.id],
+      );
+    }
+    await db.query(
+      "update auth.users set banned_until=clock_timestamp()+interval '1 hour' where id=$1",
+      [b.manifest.accounts.tutor.id],
+    );
+    try {
+      await assert.rejects(() => a.books.learner.request(input(b, 90)));
+      await assert.rejects(() => b.books.tutor.respond(response(disabled)));
+      check(
+        true,
+        "banned tutor identity blocks new requests and acceptance despite existing JWTs",
+      );
+    } finally {
+      await db.query("update auth.users set banned_until=null where id=$1", [
+        b.manifest.accounts.tutor.id,
+      ]);
+      assert.ifError(
+        (
+          await b.clients.tutor.auth.signInWithPassword({
+            email: b.manifest.accounts.tutor.email,
+            password: b.manifest.accounts.tutor.password,
+          })
+        ).error,
       );
     }
     await assert.rejects(() => b.books.learner.load(sessionId));
@@ -359,6 +397,31 @@ export async function testBookingApi(config, check) {
     check(
       finishing.filter((r) => r.status === "fulfilled").length === 1,
       "concurrent completion/cancellation cannot corrupt lifecycle revision",
+    );
+    const completingRequest = await a.books.learner.request(input(b, 90));
+    const completingSession = await b.books.tutor.respond(
+      response(completingRequest),
+    );
+    await db.query(
+      "update public.test_scheduled_sessions set starts_at=date_trunc('minute',clock_timestamp())-interval '1 minute',ends_at=date_trunc('minute',clock_timestamp())+interval '14 minutes' where id=$1",
+      [completingSession],
+    );
+    await a.books.learner.transition(action(completingSession, 2, "start"));
+    await b.books.tutor.transition(
+      action(
+        completingSession,
+        3,
+        "complete",
+        "Synthetic text-only practice completed.",
+      ),
+    );
+    const completed = (await a.books.learner.load(completingSession))
+      .sessions[0];
+    check(
+      completed.status === "completed" &&
+        completed.summary === "Synthetic text-only practice completed." &&
+        completed.history.at(-1).actor_role === "tutor",
+      "real start/completion persists shared summary and server actor identity",
     );
     const learnerSession = learnerRace.find((r) => !r.error).data;
     await a.books.learner.transition(action(learnerSession, 1, "cancel"));
