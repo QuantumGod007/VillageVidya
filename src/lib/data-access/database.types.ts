@@ -716,6 +716,111 @@ export type Database = {
         };
         Relationships: [];
       };
+      test_booking_events: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          event_number: number;
+          from_status: string | null;
+          id: string;
+          intent_id: string;
+          note: string;
+          request_id: string;
+          session_id: string | null;
+          to_status: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          event_number?: never;
+          from_status?: string | null;
+          id?: string;
+          intent_id: string;
+          note?: string;
+          request_id: string;
+          session_id?: string | null;
+          to_status: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          event_number?: never;
+          from_status?: string | null;
+          id?: string;
+          intent_id?: string;
+          note?: string;
+          request_id?: string;
+          session_id?: string | null;
+          to_status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_booking_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_booking_events_intent_id_fkey";
+            columns: ["intent_id"];
+            isOneToOne: false;
+            referencedRelation: "test_booking_intents";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_booking_events_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: false;
+            referencedRelation: "test_tutor_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_booking_events_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: false;
+            referencedRelation: "test_scheduled_sessions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      test_booking_intents: {
+        Row: {
+          actor_id: string;
+          created_at: string;
+          id: string;
+          operation: string;
+          payload: NonNullable<Json>;
+          result_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          actor_id: string;
+          created_at?: string;
+          id: string;
+          operation: string;
+          payload: NonNullable<Json>;
+          result_id: string;
+        };
+        Update: {
+          actor_id?: string;
+          created_at?: string;
+          id?: string;
+          operation?: string;
+          payload?: NonNullable<Json>;
+          result_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_booking_intents_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       test_safety_actions: {
         Row: {
           action_note: string;
@@ -812,6 +917,93 @@ export type Database = {
           },
         ];
       };
+      test_scheduled_sessions: {
+        Row: {
+          cancelled_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          ends_at: string;
+          id: string;
+          language: Database["public"]["Enums"]["learning_language"];
+          learner_id: string;
+          request_id: string;
+          revision: number;
+          started_at: string | null;
+          starts_at: string;
+          status: Database["public"]["Enums"]["test_session_status"];
+          subject_id: string;
+          summary: string;
+          tutor_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          cancelled_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          ends_at: string;
+          id?: string;
+          language: Database["public"]["Enums"]["learning_language"];
+          learner_id: string;
+          request_id: string;
+          revision?: number;
+          started_at?: string | null;
+          starts_at: string;
+          status?: Database["public"]["Enums"]["test_session_status"];
+          subject_id: string;
+          summary?: string;
+          tutor_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          cancelled_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          ends_at?: string;
+          id?: string;
+          language?: Database["public"]["Enums"]["learning_language"];
+          learner_id?: string;
+          request_id?: string;
+          revision?: number;
+          started_at?: string | null;
+          starts_at?: string;
+          status?: Database["public"]["Enums"]["test_session_status"];
+          subject_id?: string;
+          summary?: string;
+          tutor_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_scheduled_sessions_learner_id_fkey";
+            columns: ["learner_id"];
+            isOneToOne: false;
+            referencedRelation: "learner_profiles";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "test_scheduled_sessions_request_id_fkey";
+            columns: ["request_id"];
+            isOneToOne: true;
+            referencedRelation: "test_tutor_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_scheduled_sessions_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_scheduled_sessions_tutor_id_fkey";
+            columns: ["tutor_id"];
+            isOneToOne: false;
+            referencedRelation: "tutor_profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
       test_trust_audit: {
         Row: {
           actor_id: string;
@@ -854,6 +1046,103 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      test_tutor_requests: {
+        Row: {
+          created_at: string;
+          ends_at: string;
+          expires_at: string;
+          id: string;
+          language: Database["public"]["Enums"]["learning_language"];
+          learner_id: string;
+          previous_request_id: string | null;
+          revision: number;
+          search_id: string;
+          search_started_at: string;
+          session_id: string | null;
+          starts_at: string;
+          status: Database["public"]["Enums"]["test_request_status"];
+          subject_id: string;
+          topic: string;
+          tutor_id: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          ends_at: string;
+          expires_at: string;
+          id?: string;
+          language: Database["public"]["Enums"]["learning_language"];
+          learner_id: string;
+          previous_request_id?: string | null;
+          revision?: number;
+          search_id: string;
+          search_started_at: string;
+          session_id?: string | null;
+          starts_at: string;
+          status?: Database["public"]["Enums"]["test_request_status"];
+          subject_id: string;
+          topic?: string;
+          tutor_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          ends_at?: string;
+          expires_at?: string;
+          id?: string;
+          language?: Database["public"]["Enums"]["learning_language"];
+          learner_id?: string;
+          previous_request_id?: string | null;
+          revision?: number;
+          search_id?: string;
+          search_started_at?: string;
+          session_id?: string | null;
+          starts_at?: string;
+          status?: Database["public"]["Enums"]["test_request_status"];
+          subject_id?: string;
+          topic?: string;
+          tutor_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "test_tutor_requests_learner_id_fkey";
+            columns: ["learner_id"];
+            isOneToOne: false;
+            referencedRelation: "learner_profiles";
+            referencedColumns: ["user_id"];
+          },
+          {
+            foreignKeyName: "test_tutor_requests_previous_request_id_fkey";
+            columns: ["previous_request_id"];
+            isOneToOne: true;
+            referencedRelation: "test_tutor_requests";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_tutor_requests_session_id_fkey";
+            columns: ["session_id"];
+            isOneToOne: true;
+            referencedRelation: "test_scheduled_sessions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_tutor_requests_subject_id_fkey";
+            columns: ["subject_id"];
+            isOneToOne: false;
+            referencedRelation: "academic_subjects";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "test_tutor_requests_tutor_id_fkey";
+            columns: ["tutor_id"];
+            isOneToOne: false;
+            referencedRelation: "tutor_profiles";
+            referencedColumns: ["user_id"];
           },
         ];
       };
@@ -1186,6 +1475,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      load_test_bookings: { Args: { p_record_id?: string }; Returns: Json };
       load_test_trust_history: {
         Args: { p_before_event?: number; p_kind: string; p_subject_id: string };
         Returns: Json;
@@ -1217,6 +1507,28 @@ export type Database = {
           p_reason: string;
           p_relationship_id: string;
           p_request_id: string;
+        };
+        Returns: string;
+      };
+      request_test_tutor: {
+        Args: {
+          p_duration_minutes?: number;
+          p_intent_id: string;
+          p_language?: Database["public"]["Enums"]["learning_language"];
+          p_preview_id?: string;
+          p_previous_request_id?: string;
+          p_starts_at?: string;
+          p_subject_id?: string;
+          p_topic?: string;
+        };
+        Returns: string;
+      };
+      respond_test_request: {
+        Args: {
+          p_action: string;
+          p_intent_id: string;
+          p_request_id: string;
+          p_revision: number;
         };
         Returns: string;
       };
@@ -1353,6 +1665,16 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      transition_test_session: {
+        Args: {
+          p_action: string;
+          p_intent_id: string;
+          p_note: string;
+          p_revision: number;
+          p_session_id: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       app_role: "learner" | "tutor" | "guardian" | "champion" | "admin";
@@ -1360,7 +1682,11 @@ export type Database = {
       learning_language: "English" | "हिन्दी" | "मराठी" | "తెలుగు";
       review_status: "pending" | "approved" | "rejected" | "revoked";
       subject_name: "Mathematics" | "Science" | "English" | "Social Science";
+      test_request_status:
+        "pending" | "accepted" | "declined" | "expired" | "cancelled";
       test_safety_status: "submitted" | "under_review" | "resolved" | "closed";
+      test_session_status:
+        "scheduled" | "active" | "completed" | "cancelled" | "missed";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1493,7 +1819,21 @@ export const Constants = {
       learning_language: ["English", "हिन्दी", "मराठी", "తెలుగు"],
       review_status: ["pending", "approved", "rejected", "revoked"],
       subject_name: ["Mathematics", "Science", "English", "Social Science"],
+      test_request_status: [
+        "pending",
+        "accepted",
+        "declined",
+        "expired",
+        "cancelled",
+      ],
       test_safety_status: ["submitted", "under_review", "resolved", "closed"],
+      test_session_status: [
+        "scheduled",
+        "active",
+        "completed",
+        "cancelled",
+        "missed",
+      ],
     },
   },
 } as const;

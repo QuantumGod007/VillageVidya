@@ -140,6 +140,24 @@ export function setupAccount(role: Role = "tutor", restored = true) {
   const access: RealAccess = {
     mode: "supabase",
     client,
+    bookings: {
+      forActor: vi
+        .fn()
+        .mockReturnValue({
+          load: vi
+            .fn()
+            .mockResolvedValue({
+              test_only: true,
+              as_of: "2026-10-26T12:00:00Z",
+              requests: [],
+              sessions: [],
+              more: false,
+            }),
+          request: vi.fn(),
+          respond: vi.fn(),
+          transition: vi.fn(),
+        }),
+    },
     curriculum: {
       load: vi.fn().mockResolvedValue({
         boards: [],
@@ -164,28 +182,26 @@ export function setupAccount(role: Role = "tutor", restored = true) {
       deleteAvailability: vi.fn(),
     },
     trust: {
-      load: vi
-        .fn()
-        .mockImplementation(async () => ({
-          test_only: true,
-          as_of: new Date().toISOString(),
-          staff: role === "champion" || role === "admin",
-          administrator: role === "admin",
-          tutor_reviews: [],
-          relationships: [],
-          reports: [],
-          safety_queue: [],
-          accounts: [],
-          recent_actions: [],
-          more: {
-            tutors: false,
-            relationships: false,
-            reports: false,
-            safety: false,
-            accounts: false,
-            actions: false,
-          },
-        })),
+      load: vi.fn().mockImplementation(async () => ({
+        test_only: true,
+        as_of: new Date().toISOString(),
+        staff: role === "champion" || role === "admin",
+        administrator: role === "admin",
+        tutor_reviews: [],
+        relationships: [],
+        reports: [],
+        safety_queue: [],
+        accounts: [],
+        recent_actions: [],
+        more: {
+          tutors: false,
+          relationships: false,
+          reports: false,
+          safety: false,
+          accounts: false,
+          actions: false,
+        },
+      })),
       history: vi
         .fn()
         .mockResolvedValue({ records: [], more: false, next_before: null }),
