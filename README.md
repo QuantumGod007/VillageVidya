@@ -20,7 +20,7 @@ npm run build
 npm run preview
 ```
 
-The account-first build requires Supabase public client variables. If they are missing, protected pages direct to a configuration-error sign-in state rather than silently using a fictional identity. For real Supabase sign-in with a provisioned adult test account, follow [local authentication setup](docs/DATABASE.md#local-supabase). To run only the isolated fictional preview locally, set `VITE_APP_MODE=demo` in ignored `.env.local`. Never place service-role or AI keys in `VITE_*` variables.
+The account-first build opens at real account sign-in and requires Supabase public client variables. If they are missing, it shows a configuration-error state rather than silently using a fictional identity. The preserved visual/sample experience is available only at `/preview`; to make it the local home page, set `VITE_APP_MODE=demo` in ignored `.env.local`. For real Supabase sign-in with a provisioned adult test account, follow [local authentication setup](docs/DATABASE.md#local-supabase). Never place service-role or AI keys in `VITE_*` variables.
 
 ## Fictional preview only
 

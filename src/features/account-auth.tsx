@@ -58,7 +58,7 @@ export function AccountAuth({ recovery = false }: { recovery?: boolean }) {
   const configured = !!auth.access;
   return (
     <div className="container auth-page">
-      <Link to="/login" className="back-link">
+      <Link to="/preview" className="back-link">
         <ArrowLeft size={16} />
         Fictional preview
       </Link>
