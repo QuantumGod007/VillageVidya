@@ -5,6 +5,7 @@ import { Button, ButtonLink, EmptyState, Eyebrow } from "../components/ui";
 import { useWorkspaceIdentity } from "../lib/auth/provider";
 import type { CurriculumCatalog } from "../domain/curriculum";
 import type { Tables } from "../lib/data-access/database.types";
+import { AccountAssistant } from "./account-assistant";
 import "./role-dashboards.css";
 const LearnerWorkspace = lazy(() =>
   import("./learner-workspace").then((m) => ({ default: m.LearnerWorkspace })),
@@ -27,6 +28,7 @@ const TrustWorkspace = lazy(() =>
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (pathname === "/assistant") return <AccountAssistant />;
   if (
     ["/champion", "/guardian", "/admin", "/admin/users", "/safety"].includes(
       pathname,

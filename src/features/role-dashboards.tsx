@@ -414,7 +414,7 @@ export function LearnerDashboard() {
           <section className="role-quiet-section">
             <Eyebrow>WHEN YOU NEED ANOTHER WAY</Eyebrow>
             <p>
-              Ask a question with the curated AI demo, or learn from ideas
+              Ask the AI Learning Assistant a question, or learn from ideas
               shared by the village.
             </p>
             <Link className="role-text-link" to="/assistant">

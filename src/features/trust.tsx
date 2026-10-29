@@ -640,7 +640,8 @@ export function About() {
               <strong>Requires production services</strong>
               <p>
                 Real authentication and consent, multi-device realtime chat,
-                audio, official curriculum retrieval, live AI, SMS, server
+                audio, official curriculum retrieval, AI tutoring beyond this
+                bounded learning assistant, SMS, server
                 moderation, and delta synchronization.
               </p>
             </div>

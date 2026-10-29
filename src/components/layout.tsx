@@ -217,8 +217,8 @@ export function Layout() {
           <p>
             Matching calculations, quizzes, bookmarks, ELIC events, and local
             progress work in this browser. Practice conversations and Co-Teacher
-            feedback use curated samples. No real SMS, identity verification, AI
-            analysis, or cross-device sessions are connected.
+            feedback use curated samples. No real SMS, identity verification,
+            Co-Teacher AI analysis, or cross-device sessions are connected.
           </p>
           <p>
             Real registration is closed. Please use only the provided fictional
