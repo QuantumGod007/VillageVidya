@@ -1,6 +1,6 @@
 # Village Vidya
 
-A free peer-learning concept for rural and semi-urban Indian learners. The first release is an interactive **fictional local demonstration**, built against the supplied Village Vidya SRS. It is not open for real student registration.
+A free peer-learning concept for rural and semi-urban Indian learners. The deployed professor-demo path is **Supabase account-first** for provisioned adult test accounts; the interactive fictional preview is kept separate and is not real student registration.
 
 The design takes CampusPass’s warm canvas, editorial typography, and restrained cobalt as a reference, with original learning illustrations and workflows. Assets and fonts are bundled locally; the app does not request external images, analytics, or AI services.
 
@@ -20,9 +20,9 @@ npm run build
 npm run preview
 ```
 
-No environment variables, API keys, or paid services are required for the fictional demo. For real Supabase sign-in with a provisioned adult test account, follow [local authentication setup](docs/DATABASE.md#local-supabase). Never place service-role or AI keys in `VITE_*` variables.
+The account-first build requires Supabase public client variables. If they are missing, protected pages direct to a configuration-error sign-in state rather than silently using a fictional identity. For real Supabase sign-in with a provisioned adult test account, follow [local authentication setup](docs/DATABASE.md#local-supabase). To run only the isolated fictional preview locally, set `VITE_APP_MODE=demo` in ignored `.env.local`. Never place service-role or AI keys in `VITE_*` variables.
 
-## Try a connected journey
+## Fictional preview only
 
 1. Choose **Get started** and the fictional **Learner** role. Select **CBSE**, **Grade 6**, **English**, and **Mathematics** for this fractions journey. Acknowledge that the profile is fictional.
 2. Continue **Fractions, made familiar**. Answer its checkpoint; correct answers update actual local mastery. Bookmark the lesson and find it in Saved lessons.
@@ -54,7 +54,7 @@ No real OTP, consent, physical verification, automated safety escalation, SMS de
 
 Local regex contact removal catches common phone numbers, email addresses, and web links. It is not full multilingual moderation, address detection, or production child protection. User-entered messages/questions/notes are never written to persistent browser storage.
 
-The Supabase PostgreSQL/RLS foundation now supports genuine sign-in, session refresh/recovery/sign-out and server-assigned roles for provisioned adult testers. Default demo mode remains separate; private account data requires a live Auth session and trusted test-access grant. Real learner registration and tutoring remain closed. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
+The Supabase PostgreSQL/RLS foundation supports genuine sign-in, session refresh/recovery/sign-out and server-assigned roles for provisioned adult testers. Account-first is the default; the fictional preview remains separate and must be explicitly selected. Private account data requires a live Auth session and trusted test-access grant. Real learner registration and tutoring remain closed. See [database setup, migrations and security](docs/DATABASE.md). Complete the security gates in [the architecture](docs/ARCHITECTURE.md) before any real pilot.
 
 ## Stack and structure
 
@@ -87,7 +87,15 @@ Tests cover formula weights, eligibility, grade/TSS boundaries, ladder grace, ac
 
 ## Deployment
 
-`vercel.json` configures the Vite build, SPA rewrites, and response security headers. Import this **project directory** into Vercel, select Vite, and use `npm run build` with `dist` as output. No backend secrets are required for this demo. For other static hosts, rewrite app navigation to `index.html` and serve `sw.js` without long-lived caching. The Sites hosting identity is in `.openai/hosting.json`.
+`vercel.json` configures the Vite build, SPA rewrites, and response security headers. Import this **project directory** into Vercel, select Vite, and use `npm run build` with `dist` as output. Configure these environment variables in the hosting dashboard before building:
+
+- `VITE_APP_MODE=supabase`
+- `VITE_SUPABASE_URL` — the approved HTTPS URL of the existing Supabase project
+- `VITE_SUPABASE_PUBLISHABLE_KEY` — that project's public publishable (or legacy anon) key
+- `GEMINI_API_KEY` — server-only, for `/api/assistant`; never prefix this with `VITE_`
+- `GEMINI_MODEL` — optional server-only model override
+
+Provision adult test accounts and their learner enrolments or tutor qualifications through the existing trusted workflow before attempting sign-in. Apply only reviewed, merged migrations to the hosted project; the separate unmerged session-scheduling branch must be reviewed and merged before its booking flow is advertised. The Content Security Policy allows the standard `*.supabase.co` HTTPS/WebSocket endpoints. If the approved project uses a custom Supabase domain, add that exact HTTPS and WSS origin to the policy before deployment. For other static hosts, rewrite app navigation to `index.html` and serve `sw.js` without long-lived caching. The Sites hosting identity is in `.openai/hosting.json`.
 
 ## Requirements and next increments
 
