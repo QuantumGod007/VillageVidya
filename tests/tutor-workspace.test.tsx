@@ -65,7 +65,7 @@ describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth
       const f = fixture();
       openAccount(f.access, `/studio#${hash}`);
       await ready();
-      expect(document.getElementById(hash)).toHaveFocus();
+      await waitFor(() => expect(document.getElementById(hash)).toHaveFocus());
     },
   );
   it("shows stored identity and honest empty states without demo history", async () => {
@@ -80,7 +80,10 @@ describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth
     expect(
       screen.getByText("0 of 2 personal preparation steps saved"),
     ).toBeInTheDocument();
-    expect(screen.getByText(/cannot receive bookings/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Production tutoring is closed/),
+    ).toBeInTheDocument();
+    await screen.findByText("No test requests yet.");
     expect(
       screen.queryByText(/Aditi|Aarav|Mentor badge/),
     ).not.toBeInTheDocument();
@@ -121,7 +124,7 @@ describe("authenticated tutor workspace (transport fixtures; PostgreSQL and Auth
     await ready();
     await user.click(screen.getByRole("button", { name: "Add interval" }));
     await screen.findByText(
-      "Weekly availability saved. Real bookings remain closed.",
+      "Weekly availability saved. Adult-test requests are checked against current preferences.",
     );
     await user.click(screen.getByRole("button", { name: "Edit Monday 16:00" }));
     expect(

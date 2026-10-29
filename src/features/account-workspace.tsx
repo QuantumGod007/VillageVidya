@@ -5,6 +5,7 @@ import { Button, ButtonLink, EmptyState, Eyebrow } from "../components/ui";
 import { useWorkspaceIdentity } from "../lib/auth/provider";
 import type { CurriculumCatalog } from "../domain/curriculum";
 import type { Tables } from "../lib/data-access/database.types";
+import { AccountAssistant } from "./account-assistant";
 import "./role-dashboards.css";
 const LearnerWorkspace = lazy(() =>
   import("./learner-workspace").then((m) => ({ default: m.LearnerWorkspace })),
@@ -21,12 +22,18 @@ const TutorDiscovery = lazy(() =>
 const TrustWorkspace = lazy(() =>
   import("./trust-workspace").then((m) => ({ default: m.TrustWorkspace })),
 );
+const SessionWorkspace = lazy(() =>
+  import("./session-workspace").then((m) => ({ default: m.SessionWorkspace })),
+);
 
 // Account pages never mount fictional feature components. They use the shared
 // authenticated repositories and truthful release states until later phases.
 export function AccountWorkspace() {
   const { role } = useWorkspaceIdentity();
   const { pathname } = useLocation();
+  if (pathname === "/assistant") return <AccountAssistant />;
+  if (pathname === "/sessions" || pathname.startsWith("/room/"))
+    return <SessionWorkspace />;
   if (
     ["/champion", "/guardian", "/admin", "/admin/users", "/safety"].includes(
       pathname,

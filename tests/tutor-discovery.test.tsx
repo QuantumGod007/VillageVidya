@@ -30,7 +30,7 @@ async function ready() {
   await screen.findByRole("heading", { name: "Test tutor 91000000" });
 }
 describe("authenticated discovery UI (transport fixtures; real API tests validate matching)", () => {
-  it("uses saved academic context, renders server rank/explanations and offers no booking", async () => {
+  it("uses saved academic context, renders server rank and links to adult-test requests", async () => {
     const f = fixture();
     openAccount(f.access, "/tutors");
     await ready();
@@ -52,6 +52,9 @@ describe("authenticated discovery UI (transport fixtures; real API tests validat
     expect(
       screen.queryByRole("button", { name: /book|request|message|meet/i }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "Request adult-test session" }),
+    ).toHaveAttribute("href", expect.stringContaining("/sessions?candidate="));
     const user = userEvent.setup();
     await user.click(screen.getByText("Why this candidate qualifies"));
     expect(
