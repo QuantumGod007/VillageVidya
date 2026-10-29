@@ -1,5 +1,5 @@
 import { Suspense, lazy, type ReactNode } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import {
   Layout,
   Protected,
@@ -9,7 +9,7 @@ import {
 } from "./components/layout";
 import { Landing } from "./features/landing";
 import { ButtonLink, EmptyState } from "./components/ui";
-import { useWorkspaceIdentity } from "./lib/auth/provider";
+import { applicationMode, useWorkspaceIdentity } from "./lib/auth/provider";
 import { AccountWorkspace } from "./features/account-workspace";
 import { AccountAuth } from "./features/account-auth";
 import { LearningProgress, DemoUsers } from "./features/workspace-indexes";
@@ -72,7 +72,8 @@ export function AppRoutes() {
     >
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Landing />} />
+          <Route index element={<Home />} />
+          <Route path="preview" element={<Landing />} />
           <Route path="login" element={<Auth />} />
           <Route path="account/sign-in" element={<AccountAuth />} />
           <Route path="account/recovery" element={<AccountAuth recovery />} />
@@ -245,6 +246,15 @@ export function AppRoutes() {
         </Route>
       </Routes>
     </Suspense>
+  );
+}
+function Home() {
+  // A deployed professor demo begins with a real account. The visual/sample
+  // experience is retained only at an explicit preview URL.
+  return applicationMode(import.meta.env.VITE_APP_MODE) === "demo" ? (
+    <Landing />
+  ) : (
+    <Navigate to="/account/sign-in" replace />
   );
 }
 function NotFound() {
