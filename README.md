@@ -1,3 +1,6 @@
+#live at
+https://site-96f2e9e28e1a4d7bae8d8f7d3dd85046.freebuff.page/
+
 # Village Vidya
 
 A free peer-learning concept for rural and semi-urban Indian learners. The first release is an interactive **fictional local demonstration**, built against the supplied Village Vidya SRS. It is not open for real student registration.
