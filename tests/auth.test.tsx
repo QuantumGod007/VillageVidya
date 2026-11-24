@@ -2,11 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { verifiedAccount } from "../src/lib/auth/account";
+import { applicationMode } from "../src/lib/auth/provider";
 import {
   setupAccount as setup,
   openAccount as open,
 } from "./helpers/account-fixture";
 describe("verified account and demo boundary (mocked transport; real API coverage in auth:test)", () => {
+  it("defaults application builds to Supabase and only enables demo explicitly", () => {
+    expect(applicationMode(undefined)).toBe("supabase");
+    expect(applicationMode("supabase")).toBe("supabase");
+    expect(applicationMode("demo")).toBe("demo");
+    expect(applicationMode("unexpected-value")).toBe("supabase");
+  });
   it.each(["learner", "tutor", "guardian", "champion", "admin"] as const)(
     "restores trusted %s identity and keeps fictional content out",
     async (role) => {

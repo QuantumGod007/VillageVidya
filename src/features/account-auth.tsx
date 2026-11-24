@@ -58,9 +58,9 @@ export function AccountAuth({ recovery = false }: { recovery?: boolean }) {
   const configured = !!auth.access;
   return (
     <div className="container auth-page">
-      <Link to="/login" className="back-link">
+      <Link to="/preview" className="back-link">
         <ArrowLeft size={16} />
-        Fictional demo
+        Fictional preview
       </Link>
       <div className="auth-layout">
         <div className="auth-visual">
@@ -111,10 +111,10 @@ export function AccountAuth({ recovery = false }: { recovery?: boolean }) {
               <h2>Account sign-in isn’t configured here.</h2>
               <p>
                 {auth.message ||
-                  "This installation currently offers the fictional demo. A local Supabase stack and provisioned adult account are required for real sign-in."}
+                  "This deployment needs a Supabase URL, publishable key, and a provisioned adult test account before real sign-in is available."}
               </p>
               <ButtonLink to="/login" variant="outline">
-                Explore the demo <ArrowUpRight size={16} />
+                View fictional preview <ArrowUpRight size={16} />
               </ButtonLink>
             </div>
           ) : (

@@ -50,7 +50,14 @@ export default defineConfig(({ mode }) => {
   });
   return {
     plugins: [react(), tailwindcss(), localAssistantApi(environment)],
-    test: { environment: "jsdom", setupFiles: ["./tests/setup.ts"], css: false },
+    test: {
+      environment: "jsdom",
+      setupFiles: ["./tests/setup.ts"],
+      css: false,
+      // Demo-focused UI tests select the preview deliberately. Production
+      // builds default to Supabase in AccountProvider.
+      env: { VITE_APP_MODE: "demo" },
+    },
     build: { chunkSizeWarningLimit: 600 },
   };
 });

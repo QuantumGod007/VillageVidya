@@ -33,7 +33,8 @@ import {
 export function Layout() {
   const [menu, setMenu] = useState(false);
   const [info, setInfo] = useState(false);
-  const { role } = useWorkspaceIdentity();
+  const { role, auth } = useWorkspaceIdentity();
+  const accountFirst = auth.status !== "disabled";
   const { data, setPreferences, online, storageIssue, message } = useStore();
   const location = useLocation();
   useEffect(() => {
@@ -101,11 +102,17 @@ export function Layout() {
               </ButtonLink>
             ) : (
               <>
-                <Link to="/login" className="login-link">
-                  Log in
+                <Link
+                  to={accountFirst ? "/account/sign-in" : "/login"}
+                  className="login-link"
+                >
+                  {accountFirst ? "Sign in" : "Fictional preview"}
                 </Link>
-                <ButtonLink to="/onboarding" variant="ink">
-                  Get started <ArrowUpRight size={15} />
+                <ButtonLink
+                  to={accountFirst ? "/account/sign-in" : "/onboarding"}
+                  variant="ink"
+                >
+                  {accountFirst ? "Your account" : "Get started"} <ArrowUpRight size={15} />
                 </ButtonLink>
               </>
             )}

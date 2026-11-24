@@ -76,10 +76,17 @@ const Context = createContext<AccountContext>(fallback);
 // client outside component state so identity and repositories share one instance.
 let cachedConfiguration:
   { access: RealAccess | null; error: string } | undefined;
+// A deployed build is account-first unless an administrator has deliberately
+// selected the isolated fictional preview. Missing Supabase variables must be
+// visible as a configuration error, never treated as permission to use demo
+// identities.
+export function applicationMode(value: string | undefined) {
+  return value === "demo" ? "demo" : "supabase";
+}
 function runtimeConfiguration() {
   if (cachedConfiguration) return cachedConfiguration;
   cachedConfiguration = (() => {
-    if (import.meta.env.VITE_APP_MODE !== "supabase")
+    if (applicationMode(import.meta.env.VITE_APP_MODE) === "demo")
       return { access: null, error: "" };
     try {
       const result = createDataAccess({
@@ -92,7 +99,7 @@ function runtimeConfiguration() {
       return {
         access: null,
         error:
-          "Real sign-in configuration is invalid. Contact the administrator; the fictional demo is still available.",
+          "Real sign-in configuration is invalid. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY for this deployment, then retry.",
       };
     }
   })();
@@ -331,6 +338,7 @@ export function useWorkspaceIdentity() {
   const demo = useStore();
   const auth = useAccount();
   const real =
+    applicationMode(import.meta.env.VITE_APP_MODE) === "supabase" ||
     auth.preferAccount ||
     auth.status === "loading" ||
     auth.status === "authenticated";
