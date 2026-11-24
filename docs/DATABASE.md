@@ -1,6 +1,6 @@
 # Database setup and security
 
-Phases 6–10 add Supabase sign-in, persistent learner/tutor workspaces and audited trust, consent and safety workflows for provisioned adult test accounts. Public registration and real tutoring remain closed; fictional demo data stays separate. No server/service-role key belongs in browser configuration.
+Phases 6–11 add Supabase sign-in, persistent learner/tutor workspaces and audited trust, consent and safety workflows for provisioned adult test accounts. Public registration and real tutoring remain closed; fictional demo data stays separate. No server/service-role key belongs in browser configuration.
 
 ## Local Supabase
 
@@ -28,7 +28,7 @@ Migrations apply in filename order: academic catalog, identity/trust, learning/t
 
 ## Schema and access matrix
 
-27 application tables, grouped by purpose:
+31 application tables, grouped by purpose:
 
 | Tables                                                                                                  | Authenticated client access                                                         | Trusted writes                                                                    |
 | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -59,7 +59,7 @@ All new curriculum is unpublished by default. Every published ancestor and any r
 
 The Node SQL suites execute on actual PostgreSQL, change to non-bypass `anon`/`authenticated` roles, set JWT claim contexts, and assert both grants and RLS. They cover fresh migrations/reseed, FK/check/unique constraints, isolation, escalation, consent/verification tampering and revocation, publication ancestry, trusted writes and safe owner writes. Test identities/evidence exist only in a rolled-back transaction; the regular seed contains no people, consent or verified tutors.
 
-Docker is unavailable on the implementation machine. Twelve SQL suites, concurrent tutor/trust/consent checks and discovery parity/snapshot checks run on PostgreSQL 16 in **two independently created/reset disposable databases**, using minimal Auth users/sessions/JWT fixtures. This is not a claim that GoTrue or PostgREST was tested locally. CI starts the full local Supabase stack, repeats the suites on PostgreSQL 17 and its real Auth schema, resets/reseeds, checks generated types and runs real Auth/API integration. The separate frontend/domain suite remains required.
+Docker is unavailable on the implementation machine. Fourteen SQL suites, concurrent tutor/trust/consent checks and discovery parity/snapshot checks run on PostgreSQL 16 in **two independently created/reset disposable databases**, using minimal Auth users/sessions/JWT fixtures. This is not a claim that GoTrue or PostgREST was tested locally. CI starts the full local Supabase stack, repeats the suites on PostgreSQL 17 and its real Auth schema, resets/reseeds, checks generated types and runs real Auth/API integration. The separate frontend/domain suite remains required.
 
 For a disposable native PostgreSQL cluster only, `VV_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:55433/postgres npm run db:test:native` creates/drops random test databases and installs minimal auth roles/fixtures there. Tests refuse non-loopback URLs. Do not point native bootstrap at an existing application cluster. The checked-in types were generated from the migrated native schema with Supabase's official postgres-meta 0.100.0 introspection generator; normal regeneration uses the pinned CLI.
 
@@ -104,7 +104,7 @@ With the isolated local Auth stack running and migrated:
 
 ```sh
 npm run auth:test
-npx playwright install --with-deps chromium
+npx playwright install --with-deps --only-shell chromium
 npm run auth:test:browser
 # Optional manual classroom; creates no approvals, relationships or consent:
 VV_ADULT_TEST_ACCOUNT=true VV_SYNTHETIC_CLASSROOM=true npm run demo:prepare
@@ -114,3 +114,13 @@ VV_ADULT_TEST_ACCOUNT=true VV_SYNTHETIC_CLASSROOM=true npm run demo:cleanup
 ```
 
 Classroom commands refuse remote services and never reset databases. Preparation supplies five disposable adults and labelled synthetic tutor evidence/qualifications/TSS. Exercise uses the app's actual repositories and supports repeated runs; cleanup validates batch ownership and refuses outside-account audit references. The credential manifest remains for private operator disposal. CI's browser smoke test uses separate real Auth sessions, production assets and actual APIs, verifies reload persistence and PostgreSQL actor history, and checks the four trust workspaces at 320/768/1280px without screenshot galleries. Child signup, public booking, live tutoring and production safety operations remain closed.
+
+### Persistent adult-test requests and sessions (Phase 11)
+
+Migrations `20261026000100` and `20261026000200` add requests, reservations, immutable activity events and idempotent intents. No new environment variables or public signup are introduced. With the existing local adult classroom, have a Champion approve the labelled synthetic tutor record; the tutor must opt into discovery and save an enabled weekly interval. The adult learner chooses a published subject/language in `/tutors`, opens **Request adult-test session**, and proposes an IST date/time 2 minutes to 30 days ahead (15–60 minutes). In a separate authenticated browser, the tutor opens `/studio#requests` and accepts or declines. Both accounts see the same persisted request and confirmed session in `/sessions` and `/room/<server-session-id>`.
+
+Each invitation lasts up to 45 seconds inside its original 90-second matching window. Declined/expired invitations offer a server-backed **manual** next-eligible-tutor fallback; no tutor presence, notifications or automatic worker are invented. Expiry and missed states are calculated on every server read/action, without background reconciliation. A valid acceptance rechecks current access, approval, qualifications, TSS, publication, opt-in and saved availability after locking. PostgreSQL exclusion constraints prevent tutor and learner overlaps; adjacent reservations are allowed. Participants can cancel scheduled/active records, start during the reserved interval, and complete an active text activity record. Unstarted sessions become effectively missed at their end; active records become missed 15 minutes later. This supplies no live tutoring transport, chat, video/audio, AI responses, attendance verification or score/session-count awards.
+
+Only participant projections are exposed, with pseudonyms and bounded lists of 50; a known request/session UUID opens an older record. No new raw table reads/writes or client ownership edits are granted. Calls pin the verified expected account's token and late responses are discarded on navigation/sign-out. Visible pending screens poll every 5 seconds and schedules every 15; hidden screens stop polling. Historical invitation acceptance remains recorded even when its linked session is subsequently cancelled.
+
+`npm run db:test` now includes independent-connection booking/lifecycle contention; `npm run auth:test` additionally runs two disposable adult batches through actual GoTrue/PostgREST and the shared repositories. `npm run auth:test:browser` exercises discovery → learner request → separate tutor acceptance → confirmed session/reload, then switches to an unrelated learner in the same browser and verifies denial. Boundary-time tests move only owner-controlled disposable fixture timestamps; there is no client clock override. Existing trust/consent/safety tests remain required. Fixture cleanup refuses outside-account references and disposes only its own local bookings before account removal. Public/child/production participation remains closed.

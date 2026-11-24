@@ -1,4 +1,5 @@
 import { supabaseTrustRepository } from "./trust-repository";
+import { supabaseBookingRepository } from "./booking-repository";
 import { supabaseDiscoveryRepository } from "./discovery-repository";
 import { supabaseTutorRepository } from "./tutor-repository";
 import { createClient } from "@supabase/supabase-js";
@@ -37,5 +38,6 @@ export function createDataAccess(options: unknown) {
     tutor: supabaseTutorRepository(client),
     discovery: supabaseDiscoveryRepository(client),
     trust: supabaseTrustRepository(client),
+    bookings: supabaseBookingRepository(client),
   };
 }

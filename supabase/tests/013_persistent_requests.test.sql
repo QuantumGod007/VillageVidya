@@ -1,0 +1,55 @@
+update public.tutor_availability set enabled=true where tutor_id='00000000-0000-0000-0000-000000000003';
+-- SQL role tests complement real GoTrue/PostgREST and multi-browser tests.
+update public.tutor_profiles set discovery_preview_enabled=true where user_id='00000000-0000-0000-0000-000000000003';
+insert into public.tutor_verification_records(tutor_id,status,reviewed_by,verified_grade,decision_note) values('00000000-0000-0000-0000-000000000003','approved','00000000-0000-0000-0000-000000000005',10,'ADULT TEST ONLY: synthetic SQL booking fixture.');
+create temporary table booking_fixture as select discovery_preview_id preview,
+  (date_trunc('week',clock_timestamp() at time zone 'Asia/Kolkata')+interval '7 days 16 hours') at time zone 'Asia/Kolkata' begins
+  from public.tutor_profiles where user_id='00000000-0000-0000-0000-000000000003';
+grant select on booking_fixture to authenticated;
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","session_id":"00000000-0000-0000-0000-000000000001"}',true);
+create temporary table booking_request as select public.request_test_tutor('91000000-0000-4000-8000-000000000001',(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Fractions practice') id;
+select pg_temp.assert_true(public.request_test_tutor('91000000-0000-4000-8000-000000000001',(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Fractions practice')=(select id from booking_request),'duplicate creation returns the original server ID');
+select pg_temp.assert_true(jsonb_array_length(public.load_test_bookings()->'requests')=1,'duplicate creation produces one request');
+select pg_temp.assert_true(public.load_test_bookings()#>>'{requests,0,viewer_role}'='learner','server identifies learner participant');
+select pg_temp.assert_true(public.load_test_bookings()::text not like '%example.invalid%' and public.load_test_bookings()::text not like '%00000000-0000-0000-0000-000000000003%','projection excludes emails and tutor Auth UUID');
+select pg_temp.expect_error($q$select public.request_test_tutor('91000000-0000-4000-8000-000000000001',(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Changed intent')$q$,'22023','intent cannot change payload');
+select pg_temp.expect_error($q$insert into public.test_tutor_requests(learner_id,tutor_id) values(auth.uid(),auth.uid())$q$,'42501','client cannot forge ownership');
+select pg_temp.expect_error($q$select * from public.test_tutor_requests$q$,'42501','raw private ownership fields are not exposed');
+select pg_temp.expect_error($q$select public.respond_test_request((select id from booking_request),1,'accept',gen_random_uuid())$q$,'42501','learner cannot impersonate tutor');
+select pg_temp.expect_error($q$select public.request_test_tutor(gen_random_uuid(),(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture)+interval '2 hours',15::smallint,'Outside preference')$q$,'42501','requested date must fit saved availability');
+select pg_temp.expect_error($q$select public.request_test_tutor(gen_random_uuid(),(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Contact test@example.invalid')$q$,'22023','contact information rejected in topic');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000002","session_id":"00000000-0000-0000-0000-000000000002"}',true);
+select pg_temp.expect_error($q$select public.load_test_bookings((select id from booking_request))$q$,'42501','other learner cannot read request');
+select pg_temp.expect_error($q$select public.respond_test_request((select id from booking_request),1,'cancel',gen_random_uuid())$q$,'42501','other learner cannot cancel');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000008","session_id":"00000000-0000-0000-0000-000000000008"}',true);
+select pg_temp.expect_error($q$select public.respond_test_request((select id from booking_request),1,'accept',gen_random_uuid())$q$,'42501','other tutor cannot accept');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000003","session_id":"00000000-0000-0000-0000-000000000003"}',true);
+select pg_temp.assert_true(public.load_test_bookings()#>>'{requests,0,id}'=(select id::text from booking_request),'tutor sees the SAME durable request');
+select public.respond_test_request((select id from booking_request),1,'decline','92000000-0000-4000-8000-000000000001');
+select public.respond_test_request((select id from booking_request),1,'decline','92000000-0000-4000-8000-000000000001');
+select pg_temp.expect_error($q$select public.respond_test_request((select id from booking_request),1,'accept',gen_random_uuid())$q$,'40001','stale acceptance rejected');
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","session_id":"00000000-0000-0000-0000-000000000001"}',true);
+select pg_temp.assert_true(public.load_test_bookings()#>>'{requests,0,status}'='declined','learner sees independent tutor response');
+select pg_temp.expect_error($q$select public.request_test_tutor(gen_random_uuid(),null,null,null,null,15::smallint,'',(select id from booking_request))$q$,'42501','fallback cannot fabricate an eligible next tutor');
+create temporary table expiring_request as select public.request_test_tutor(gen_random_uuid(),(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Expiry exercise') id;
+reset role;
+-- Owner-controlled boundary-time fixture; clients cannot change deadlines.
+update public.test_tutor_requests set expires_at=clock_timestamp()-interval '1 second' where id=(select id from expiring_request);
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000003","session_id":"00000000-0000-0000-0000-000000000003"}',true);
+select pg_temp.assert_true(public.load_test_bookings((select id from expiring_request))#>>'{requests,0,status}'='expired','expiry on every read uses database time');
+select pg_temp.expect_error($q$select public.respond_test_request((select id from expiring_request),2,'accept',gen_random_uuid())$q$,'22023','expired request cannot be accepted');
+reset role;
+update public.adult_test_accounts set enabled=false where user_id='00000000-0000-0000-0000-000000000001';
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-000000000001","session_id":"00000000-0000-0000-0000-000000000001"}',true);
+select pg_temp.expect_error($q$select public.request_test_tutor(gen_random_uuid(),(select preview from booking_fixture),'cbse-8-mathematics','English',(select begins from booking_fixture),15::smallint,'Disabled actor')$q$,'42501','disabled learner denied');
+reset role;
+set local role anon;
+select pg_temp.expect_error($q$select public.load_test_bookings()$q$,'42501','no anonymous booking endpoint');
+reset role;
+set local role service_role;
+select pg_temp.assert_true(not has_table_privilege(current_user,'public.test_booking_events','INSERT'),'service cannot manufacture activity');
+select pg_temp.assert_true(not has_table_privilege(current_user,'public.test_booking_intents','UPDATE'),'service cannot rewrite intent history');
+reset role;

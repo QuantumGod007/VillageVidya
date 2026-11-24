@@ -232,8 +232,8 @@ export function DiscoveryContent({
       <p className="account-release-note">
         <LockKeyhole size={16} />
         This preview is for provisioned adults only. Test approval is not
-        physical verification. No requests, bookings or communication are
-        available.
+        physical verification. Requests and scheduling are adult-test records;
+        production tutoring and communication remain closed.
       </p>
       <form
         className="discovery-filters"
@@ -578,8 +578,14 @@ export function DiscoveryContent({
                       </details>
                       <div className="discovery-no-booking">
                         <LockKeyhole size={14} />
-                        Preview only · participation closed
+                        Adult test only · production participation closed
                       </div>
+                      <ButtonLink
+                        to={`/sessions?candidate=${candidate.preview_id}&subject=${encodeURIComponent(data.context.subject_id)}&language=${encodeURIComponent(data.context.language)}`}
+                        variant="outline"
+                      >
+                        Request adult-test session
+                      </ButtonLink>
                     </article>
                   </li>
                 ))}

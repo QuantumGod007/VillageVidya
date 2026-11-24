@@ -20,6 +20,7 @@ import {
 import type { Language } from "../domain/types";
 import type { Tables } from "../lib/data-access/database.types";
 import "./role-dashboards.css";
+import { SessionWorkspace } from "./session-workspace";
 export function enrollmentContext(
   catalog: CurriculumCatalog,
   enrollment?: Tables<"learner_academic_enrollments">,
@@ -658,6 +659,7 @@ export function LearnerContent({
                   </section>
                 </aside>
               </div>
+              <SessionWorkspace embedded />
             </>
           )}
         </>

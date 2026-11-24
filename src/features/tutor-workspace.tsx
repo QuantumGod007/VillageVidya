@@ -8,6 +8,7 @@ import type { AvailabilityInput } from "../lib/data-access/tutor-repository";
 import type { Tables } from "../lib/data-access/database.types";
 import "./role-dashboards.css";
 import "./tutor-workspace.css";
+import { SessionWorkspace } from "./session-workspace";
 const days = [
   "Sunday",
   "Monday",
@@ -148,16 +149,16 @@ function AvailabilityEditor({
     setError("");
   }
   return (
-    <section className="role-section" id="schedule" tabIndex={-1}>
+    <section className="role-section" id="availability" tabIndex={-1}>
       <div className="role-section-title">
         <h2>Weekly availability</h2>
         <CalendarDays size={20} />
       </div>
       <p className="small muted">
-        Asia/Kolkata (IST, UTC+05:30). Saved weekly preferences, with no
-        appointments or live bookings. 15 minutes–4 hours per interval; up to 4
-        per day and 28 per week. Disabled intervals also reserve their place in
-        this schedule.
+        Asia/Kolkata (IST, UTC+05:30). Saved weekly preferences constrain
+        adult-test requests; only acceptance reserves a session. 15 minutes–4
+        hours per interval; up to 4 per day and 28 per week. Disabled intervals
+        also reserve their place in this schedule.
       </p>
       <ol className="tutor-week">
         {week.map((day) => (
@@ -411,8 +412,8 @@ export function TutorContent({
       </header>
       <p className="account-release-note">
         <LockKeyhole size={16} />
-        Real tutoring is closed. This adult test account cannot receive
-        bookings.
+        Production tutoring is closed. Only server-authorized adult-test
+        requests and scheduled activity records are available.
       </p>
       {ws.error && (
         <div
@@ -658,7 +659,7 @@ export function TutorContent({
                   ws.mutate(
                     input.id,
                     () => access.tutor.saveAvailability(input),
-                    "Weekly availability saved. Real bookings remain closed.",
+                    "Weekly availability saved. Adult-test requests are checked against current preferences.",
                   )
                 }
                 remove={(row) =>
@@ -669,15 +670,7 @@ export function TutorContent({
                   )
                 }
               />
-              <section className="role-section" id="requests" tabIndex={-1}>
-                <div className="role-section-title">
-                  <h2>Tutoring requests & sessions</h2>
-                </div>
-                <EmptyState
-                  title="Real tutoring is not open yet."
-                  description="No requests or appointments are assigned to this account. Weekly preferences do not create sessions. Verification, consent and matching services must be implemented before participation opens."
-                />
-              </section>
+              <SessionWorkspace embedded />
             </>
           )}
           {!settings && (
